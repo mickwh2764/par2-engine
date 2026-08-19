@@ -50,7 +50,7 @@ const COMPARISON_ROWS = [
   {
     dimension:   "Open source",
     cofe:        "Yes — github.com/bharathananth/COFE (Python)",
-    par2:        "Yes — par2-circadian v1.1.5 (pip install)",
+    par2:        "Yes — par2-circadian v1.1.8 (pip install)",
   },
 ];
 
