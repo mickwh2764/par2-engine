@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "par2-circadian"
-version = "1.1.5"
+version = "1.1.8"
 description = "AR(2) eigenvalue analysis for gene expression time series"
 readme = "README.md"
 license = "PolyForm-Noncommercial-1.0.0"
@@ -38,9 +38,9 @@ par2 = "par2.cli:main"
 
 [project.urls]
 Homepage = "https://par2discovery.com"
-"Researcher-Profile" = "https://par2discovery.com/profile"
 Repository = "https://github.com/mickwh2764/par2discovery"
 Documentation = "https://github.com/mickwh2764/par2discovery#readme"
+Reproducibility = "https://github.com/mickwh2764/par2-reproducibility"
 
 [tool.setuptools.packages.find]
 include = ["par2*"]

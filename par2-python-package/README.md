@@ -1,5 +1,7 @@
 # par2-circadian
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21963192.svg)](https://doi.org/10.5281/zenodo.21963192)
+
 **AR(2) eigenvalue analysis for gene expression time series**
 
 Fits second-order autoregressive models to gene expression data and computes the eigenvalue modulus |λ|, a single number that quantifies how strongly a gene's past determines its future (temporal persistence). Discovers the three-layer hierarchy: Clock > Target > Background.
@@ -45,6 +47,21 @@ print(f"Health grade:  {hierarchy['health_grade']}")
 # Save results
 par2.save_results(results, "ar2_results.csv")
 ```
+
+### Confidence intervals
+
+A point estimate of |λ| from a short series is imprecise, so `fit_ar2` can return
+a residual-bootstrap 95% interval alongside it:
+
+```python
+result = par2.fit_ar2(expression, n_bootstrap=2000, seed=1)
+print(result["eigenvalue"], result["eigenvalue_ci"])
+```
+
+The residuals are resampled, the series regenerated from the fitted recursion and
+the model refitted, so only the one observed series is needed — no biological
+replicates, which most circadian designs do not provide. Intervals are opt-in and
+absent unless `n_bootstrap > 0`.
 
 ### Command Line
 
@@ -114,6 +131,12 @@ Each gene gets:
 | 0.3–0.5 | Weak persistence (e.g., downstream effectors) |
 | 0.0–0.3 | Rapidly decaying / noise-dominated |
 
+These bands describe groups of genes, not individual ones. At 24 evenly sampled
+timepoints the 95% interval on a single gene's |λ| is typically ~0.4 wide, and
+the estimator is biased upward below ~24 points, so a lone value can easily fall
+in the wrong row. Report `eigenvalue_ci` with any per-gene number, compare groups
+rather than genes, and do not interpret differences smaller than the interval.
+
 ## Method
 
 The AR(2) model fits:
@@ -129,7 +152,7 @@ For real roots: |λ| = max(|r₁|, |r₂|)
 
 The three-layer hierarchy emerges because clock genes (strong autonomous oscillation) have higher |λ| than clock-controlled target genes (driven oscillation), which in turn have higher |λ| than background genes (no circadian regulation).
 
-See: Whiteside M (2026). "AR(2) eigenvalue modulus as a measure of temporal persistence in circadian gene expression." *Research Square* [Preprint]. doi:10.21203/rs.3.rs-9283100/v1
+See: Whiteside M (2026). "AR(2) eigenvalue modulus as a measure of temporal persistence in gene expression: circadian hierarchy emerges from two coefficients." *Research Square* [Preprint]. doi:10.21203/rs.3.rs-9283100/v1
 
 ## Researcher Profile
 
@@ -151,7 +174,28 @@ use requires a separate commercial license** (contact mickwh@msn.com). See
 [LICENSE](LICENSE) for details. The PAR(2) methodology is the subject of a pending
 UK patent application, covering the methodology independently of this software license.
 
-If you use this software in academic work, please cite:
+## Citation
 
-> Whiteside M (2026). "AR(2) eigenvalue modulus as a measure of temporal persistence in circadian gene expression." *Research Square* [Preprint]. doi:10.21203/rs.3.rs-9283100/v1
+Machine-readable metadata is in [`CITATION.cff`](CITATION.cff) — GitHub's "Cite
+this repository" button reads it, as do Zenodo, `cffconvert` and most reference
+managers. Please cite the software and the method preprint together:
 
+> Whiteside M (2026). *par2-circadian: AR(2) eigenvalue analysis for gene
+> expression time series*. Version 1.1.8. Zenodo.
+> doi:10.5281/zenodo.21963192
+>
+> Whiteside M (2026). "AR(2) eigenvalue modulus as a measure of temporal
+> persistence in gene expression: circadian hierarchy emerges from two
+> coefficients." *Research Square* [Preprint]. doi:10.21203/rs.3.rs-9283100/v1
+
+Every release is archived on Zenodo. `10.5281/zenodo.21963192` is the concept
+DOI and always resolves to the latest version; cite a version DOI only when you
+need to pin exactly what you ran.
+
+In a Methods section, identify the software as `par2-circadian (RRID:SCR_028837)`.
+The package is also registered in [bio.tools](https://bio.tools/par2-circadian) as
+`biotools:par2-circadian`.
+
+The full publication list lives at
+<https://par2discovery.com/publications.bib> — one entry per work, every DOI
+verified against Crossref or DataCite.

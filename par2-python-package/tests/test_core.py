@@ -89,19 +89,6 @@ def test_eigenperiod_metric():
     assert math.isnan(ep_real)
 
 
-if __name__ == "__main__":
-    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
-    passed = 0
-    for test in tests:
-        try:
-            test()
-            print(f"  PASS  {test.__name__}")
-            passed += 1
-        except Exception as e:
-            print(f"  FAIL  {test.__name__}: {e}")
-    print(f"\n{passed}/{len(tests)} tests passed")
-
-
 def test_bootstrap_interval_is_ordered_and_reproducible():
     """Residual bootstrap returns an ordered, seed-reproducible interval."""
     t = np.arange(24)
@@ -134,3 +121,16 @@ def test_bootstrap_interval_narrows_with_series_length():
     width = lambda r: r["eigenvalue_ci"][1] - r["eigenvalue_ci"][0]
     assert width(long) < width(short)
     assert width(short) > 0.1
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
+    passed = 0
+    for test in tests:
+        try:
+            test()
+            print(f"  PASS  {test.__name__}")
+            passed += 1
+        except Exception as e:
+            print(f"  FAIL  {test.__name__}: {e}")
+    print(f"\n{passed}/{len(tests)} tests passed")
