@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circadian Coupling Orrery — PAR(2) Re-entrainment</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030d1a;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --accent: #facc15;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 11px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 1.05rem; font-weight: 400; letter-spacing: 0.03em; color: #f1f5f9; }
+    header .sub { font-size: 0.7rem; color: var(--muted); font-family: 'Courier New', monospace; }
+    .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .pill-btn {
+      font-size: 0.67rem; font-family: 'Courier New', monospace; letter-spacing: 0.06em;
+      padding: 4px 11px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--surface); color: #94a3b8; cursor: pointer; transition: all 0.18s;
+    }
+    .pill-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+    .pill-btn.on { border-color: rgba(250,204,21,0.4); color: var(--accent); background: rgba(250,204,21,0.07); }
+
+    /* Dataset selector */
+    #datasetSel {
+      font-size: 0.67rem; font-family: 'Courier New', monospace; letter-spacing: 0.04em;
+      padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--surface); color: #94a3b8; cursor: pointer;
+      outline: none; appearance: none; -webkit-appearance: none;
+      /* reserved for future dataset options — currently only GSE54650 */
+    }
+    #datasetSel:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+    #dataStatus {
+      font-size: 0.63rem; font-family: 'Courier New', monospace;
+      padding: 3px 9px; border-radius: 20px; border: 1px solid transparent;
+      transition: all 0.3s;
+    }
+    #dataStatus.loading { color: #94a3b8; border-color: rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); }
+    #dataStatus.live    { color: #34d399; border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.06); }
+    #dataStatus.fallback{ color: #f87171; border-color: rgba(248,113,113,0.25); background: rgba(248,113,113,0.06); }
+    #dataStatus.partial { color: #fb923c; border-color: rgba(251,146,60,0.25); background: rgba(251,146,60,0.06); }
+
+    .stage { flex: 1; display: flex; min-height: 0; }
+
+    .orrery-col {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+
+    /* ── SVG ── */
+    #orrerySvg {
+      width: min(calc(100vw - 308px), calc(100vh - 44px), 720px);
+      height: min(calc(100vw - 308px), calc(100vh - 44px), 720px);
+      overflow: visible;
+    }
+
+    /* Orbital animation – each tissue gets its own period via --dur */
+    .orbit-body {
+      animation: orbit var(--dur, 20s) linear infinite;
+      /* transform-origin must be in SVG viewport coordinates, not the element box */
+      transform-box: view-box;
+      transform-origin: 360px 360px;
+    }
+    .orbit-body.paused { animation-play-state: paused; }
+
+    @keyframes orbit {
+      from { transform: rotate(calc(var(--phase, 0deg))); }
+      to   { transform: rotate(calc(var(--phase, 0deg) + 360deg)); }
+    }
+
+    /* Pulsing SCN */
+    @keyframes scnPulse {
+      0%,100% { r: 22px; opacity: 1; }
+      50% { r: 26px; opacity: 0.9; }
+    }
+    #scnCore { animation: scnPulse 3.5s ease-in-out infinite; }
+    @keyframes scnGlow {
+      0%,100% { r: 55px; opacity: 0.25; }
+      50% { r: 70px; opacity: 0.12; }
+    }
+    #scnGlow { animation: scnGlow 3.5s ease-in-out infinite; }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 288px; flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .jl-panel { padding: 16px 18px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sec-label {
+      font-size: 0.63rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); font-family: 'Courier New', monospace; margin-bottom: 11px;
+    }
+    .dir-toggle { display: flex; gap: 6px; margin-bottom: 11px; }
+    .dir-btn {
+      flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface); color: #64748b; font-size: 0.7rem;
+      font-family: 'Courier New', monospace; cursor: pointer; text-align: center;
+      transition: all 0.18s;
+    }
+    .dir-btn.sel { border-color: rgba(96,165,250,0.5); color: #60a5fa; background: rgba(96,165,250,0.08); }
+    .shift-row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+    .shift-disp { font-size: 1.4rem; font-family: 'Courier New', monospace; min-width: 54px; text-align: center; }
+    .shift-disp .unit { font-size: 0.72rem; color: var(--muted); display: block; margin-top: -4px; }
+    .adj-group { display: flex; flex-direction: column; gap: 4px; }
+    .adj-btn {
+      width: 28px; height: 22px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--surface); color: #94a3b8; cursor: pointer; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .adj-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .sim-btn {
+      width: 100%; padding: 9px; border-radius: 8px;
+      border: 1px solid rgba(250,204,21,0.3); background: rgba(250,204,21,0.08);
+      color: var(--accent); font-size: 0.78rem; font-family: 'Courier New', monospace;
+      letter-spacing: 0.06em; cursor: pointer; transition: all 0.2s;
+    }
+    .sim-btn:hover { background: rgba(250,204,21,0.15); border-color: rgba(250,204,21,0.5); }
+    .sim-btn.running { border-color: rgba(248,113,113,0.4); color: #f87171; background: rgba(248,113,113,0.07); }
+
+    .day-counter { margin-top: 13px; padding: 9px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); display: none; }
+    .day-counter.vis { display: block; }
+    .day-num { font-size: 1.4rem; font-family: 'Courier New', monospace; letter-spacing: -0.02em; }
+    .day-label { font-size: 0.63rem; color: var(--muted); font-family: 'Courier New', monospace; margin-top: 1px; }
+    .day-track { margin-top: 7px; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; }
+    .day-fill { height: 3px; background: linear-gradient(90deg,#60a5fa,#facc15); border-radius: 2px; width: 0%; transition: width 0.12s; }
+
+    .realign-sec { padding: 12px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; display: none; }
+    .realign-sec.vis { display: block; }
+    .chip-list { display: flex; flex-direction: column; gap: 6px; margin-top: 9px; }
+    .chip {
+      display: flex; align-items: center; gap: 8px; padding: 5px 9px;
+      border-radius: 6px; background: var(--surface); border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+    .chip.done { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
+    .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .chip-name { font-size: 0.73rem; color: #cbd5e1; flex: 1; font-family: 'Courier New', monospace; }
+    .chip-status { font-size: 0.67rem; font-family: 'Courier New', monospace; color: var(--muted); }
+    .chip.done .chip-status { color: #34d399; }
+
+    .info-col { flex: 1; padding: 14px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .info-box { padding: 12px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); min-height: 88px; }
+    .info-box h3 { font-size: 0.9rem; font-weight: 400; margin-bottom: 8px; }
+    .mrow { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .mk { font-size: 0.67rem; color: var(--muted); font-family: 'Courier New', monospace; }
+    .mv { font-size: 0.74rem; font-family: 'Courier New', monospace; }
+    .plain { font-size: 0.74rem; color: #94a3b8; line-height: 1.55; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .hint { font-size: 0.72rem; color: var(--muted); font-style: italic; line-height: 1.55; }
+    .exp-box { padding: 12px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); font-size: 0.71rem; color: #64748b; line-height: 1.65; }
+
+    /* ── Gene Overlay Panel ── */
+    .gene-panel {
+      padding: 13px 18px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .gene-search-row { display: flex; gap: 6px; margin-bottom: 7px; }
+    .gene-input {
+      flex: 1; padding: 5px 9px; border-radius: 6px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+      color: var(--text); font-size: 0.75rem; font-family: 'Courier New', monospace;
+      outline: none; transition: border-color 0.18s;
+    }
+    .gene-input:focus { border-color: rgba(96,165,250,0.45); }
+    .gene-input::placeholder { color: var(--muted); }
+    .gene-btn {
+      padding: 5px 11px; border-radius: 6px; border: 1px solid rgba(96,165,250,0.3);
+      background: rgba(96,165,250,0.07); color: #60a5fa; font-size: 0.75rem;
+      font-family: 'Courier New', monospace; cursor: pointer; transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .gene-btn:hover { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.55); }
+    .gene-btn.clear { border-color: rgba(248,113,113,0.3); color: #f87171; background: rgba(248,113,113,0.07); }
+    .gene-btn.clear:hover { background: rgba(248,113,113,0.15); }
+    .gene-status {
+      font-size: 0.65rem; font-family: 'Courier New', monospace;
+      color: var(--muted); min-height: 14px; line-height: 1.5;
+    }
+    .gene-status.err { color: #f87171; }
+    .gene-status.ok  { color: #34d399; }
+
+    /* Gene info box, shown in the info-col when a gene is loaded */
+    #geneInfoBox {
+      padding: 12px 14px; border-radius: 8px; background: var(--surface);
+      border: 1px solid rgba(96,165,250,0.2); display: none;
+    }
+    #geneInfoBox.vis { display: block; }
+    #geneInfoBox h3 { font-size: 0.88rem; font-weight: 400; margin-bottom: 8px; color: #60a5fa; }
+
+    /* Overlay dot glow ring shown on SVG bodies */
+    .gene-ring { transition: opacity 0.35s, r 0.35s; }
+
+    /* Tooltip */
+    #tip {
+      position: fixed; pointer-events: none; display: none;
+      background: rgba(3,13,26,0.93); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 11px; font-size: 0.71rem;
+      font-family: 'Courier New', monospace; color: var(--text); white-space: nowrap;
+      backdrop-filter: blur(4px); z-index: 99;
+    }
+
+    /* Hover ring highlight */
+    .orbit-ring { cursor: default; }
+    .tissue-group:hover .hover-ring { opacity: 0.5; }
+    .tissue-group { cursor: pointer; }
+
+    /* ── Body anatomy map ── */
+    #bodyMap {
+      position: absolute;
+      bottom: 46px;
+      left: 22px;
+      background: rgba(3,13,26,0.90);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 9px 11px 7px;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      z-index: 10;
+    }
+    #bodyMap .bm-title {
+      font-size: 0.56rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #1e3a5f;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    /* Organ glow shapes — three visual states */
+    .organ-shape {
+      opacity: 0.10;
+      transition: opacity 0.55s ease;
+    }
+    /* During simulation: organ not yet re-aligned → pulse brightly */
+    .organ-shape.misaligned {
+      opacity: 0.72;
+      animation: organPulse 1.6s ease-in-out infinite;
+      filter: url(#bGlow);
+    }
+    /* After re-alignment: fade to almost nothing */
+    .organ-shape.realigned {
+      opacity: 0.04 !important;
+      animation: none;
+    }
+    @keyframes organPulse {
+      0%, 100% { opacity: 0.55; }
+      50%       { opacity: 0.90; }
+    }
+
+    /* Organ name labels inside the body map */
+    .bm-lbl {
+      font-family: 'Courier New', monospace;
+      font-size: 6px;
+      opacity: 0.35;
+      pointer-events: none;
+      transition: opacity 0.55s;
+    }
+    .bm-lbl.misaligned { opacity: 0.85; }
+    .bm-lbl.realigned  { opacity: 0.12; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Circadian Coupling Orrery</h1>
+  <span class="sub" id="orrerySub">PAR(2) · GSE54650 · clock genes · tissues</span>
+  <div class="header-right">
+    <select id="datasetSel" title="Select dataset">
+      <option value="GSE54650">Mouse · GSE54650</option>
+      <option value="GSE98965">Baboon · GSE98965</option>
+    </select>
+    <span id="dataStatus" class="loading">⬤ loading</span>
+    <button class="pill-btn" id="btnRefresh" title="Clear cached eigenvalues and re-fetch live data">↻ Refresh data</button>
+    <button class="pill-btn on" id="btnLabels">Labels</button>
+    <button class="pill-btn on" id="btnAnim">Pause</button>
+    <button class="pill-btn" id="btnReset">Reset</button>
+    <a href="/" class="pill-btn" style="text-decoration:none">← Platform</a>
+  </div>
+</header>
+
+<div class="stage">
+  <div class="orrery-col">
+    <!--
+      SVG centre: 360,360   total: 720×720
+      Orbit radii are proportional to τ_c (temporal correlation length).
+      τ_c = -2/ln(|λ|)  where Δt = 2h (GSE54650 sampling interval)
+    -->
+    <svg id="orrerySvg" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Starfield filter -->
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="scnGrad" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stop-color="#fffbeb"/>
+          <stop offset="40%" stop-color="#fde68a"/>
+          <stop offset="100%" stop-color="#f59e0b"/>
+        </radialGradient>
+        <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#030d1a" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Background -->
+      <rect width="720" height="720" fill="#030d1a"/>
+      <circle cx="360" cy="360" r="360" fill="url(#bgGrad)"/>
+
+      <!-- Static stars (seeded positions) -->
+      <g id="stars" opacity="0.6">
+        <circle cx="42" cy="88" r="0.8" fill="white" opacity="0.3"/>
+        <circle cx="115" cy="23" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="203" cy="67" r="0.7" fill="white" opacity="0.4"/>
+        <circle cx="311" cy="18" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="478" cy="41" r="0.6" fill="white" opacity="0.3"/>
+        <circle cx="562" cy="92" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="634" cy="31" r="0.8" fill="white" opacity="0.35"/>
+        <circle cx="691" cy="74" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="18" cy="178" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="87" cy="245" r="0.7" fill="white" opacity="0.3"/>
+        <circle cx="23" cy="412" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="65" cy="534" r="0.8" fill="white" opacity="0.35"/>
+        <circle cx="12" cy="631" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="92" cy="688" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="178" cy="701" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="302" cy="712" r="0.7" fill="white" opacity="0.3"/>
+        <circle cx="421" cy="705" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="551" cy="698" r="0.6" fill="white" opacity="0.3"/>
+        <circle cx="641" cy="671" r="0.8" fill="white" opacity="0.35"/>
+        <circle cx="703" cy="634" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="715" cy="521" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="709" cy="388" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="712" cy="267" r="0.7" fill="white" opacity="0.3"/>
+        <circle cx="698" cy="178" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="134" cy="398" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="167" cy="563" r="0.4" fill="white" opacity="0.15"/>
+        <circle cx="245" cy="632" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="488" cy="658" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="589" cy="601" r="0.7" fill="white" opacity="0.3"/>
+        <circle cx="661" cy="492" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="668" cy="321" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="612" cy="218" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="524" cy="154" r="0.8" fill="white" opacity="0.35"/>
+        <circle cx="423" cy="112" r="0.4" fill="white" opacity="0.2"/>
+        <circle cx="321" cy="143" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="224" cy="178" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="354" cy="234" r="0.4" fill="white" opacity="0.15"/>
+        <circle cx="498" cy="278" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="578" cy="354" r="0.4" fill="white" opacity="0.15"/>
+        <circle cx="534" cy="478" r="0.6" fill="white" opacity="0.25"/>
+        <circle cx="412" cy="534" r="0.4" fill="white" opacity="0.15"/>
+        <circle cx="278" cy="512" r="0.5" fill="white" opacity="0.2"/>
+        <circle cx="198" cy="456" r="0.4" fill="white" opacity="0.15"/>
+        <circle cx="156" cy="312" r="0.6" fill="white" opacity="0.25"/>
+      </g>
+
+      <!-- Orbit rings (dashed) — ordered innermost → outermost -->
+      <!-- r values derived from τ_c, mapped to pixel range 68–298 -->
+      <!-- Hypothalamus τ_c=2.64 → r=68; Lung τ_c=8.82 → r=298 -->
+      <circle id="ring-hyp" cx="360" cy="360" r="68"  fill="none" stroke="#facc15" stroke-width="0.8" stroke-dasharray="4 8"  opacity="0.18"/>
+      <circle id="ring-mus" cx="360" cy="360" r="126" fill="none" stroke="#fb923c" stroke-width="0.8" stroke-dasharray="4 8"  opacity="0.15"/>
+      <circle id="ring-liv" cx="360" cy="360" r="140" fill="none" stroke="#c084fc" stroke-width="0.8" stroke-dasharray="4 8"  opacity="0.15"/>
+      <circle id="ring-adr" cx="360" cy="360" r="170" fill="none" stroke="#34d399" stroke-width="0.8" stroke-dasharray="4 8"  opacity="0.14"/>
+      <circle id="ring-kid" cx="360" cy="360" r="226" fill="none" stroke="#60a5fa" stroke-width="0.8" stroke-dasharray="4 8"  opacity="0.14"/>
+      <circle id="ring-lun" cx="360" cy="360" r="298" fill="none" stroke="#f472b6" stroke-width="0.8" stroke-dasharray="4 8"  opacity="0.14"/>
+
+      <!-- Radius annotation arrow -->
+      <g id="radiusArrow" opacity="0.3">
+        <line x1="428" y1="618" x2="648" y2="618" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 5"/>
+        <polygon points="648,614 648,622 656,618" fill="#94a3b8"/>
+        <text x="538" y="633" fill="#94a3b8" font-family="Courier New" font-size="10" text-anchor="middle">wider orbit  →  slower re-entrainment</text>
+      </g>
+
+      <!-- SCN / zeitgeber centre -->
+      <circle id="scnGlow" cx="360" cy="360" r="55" fill="#f59e0b" opacity="0.25"/>
+      <circle id="scnCore" cx="360" cy="360" r="22" fill="url(#scnGrad)" filter="url(#glow)"/>
+      <text x="360" y="396" fill="#fde68a" font-family="Courier New" font-size="11" text-anchor="middle">LIGHT</text>
+      <text x="360" y="409" fill="#78716c" font-family="Courier New" font-size="9" text-anchor="middle">zeitgeber</text>
+
+      <!--
+        Orbiting tissue groups.
+        Each <g> rotates around the SVG centre (360,360).
+        The tissue dot is placed at (360 + r, 360) in the unrotated frame.
+        CSS animation rotates the whole group.
+        --phase sets the initial rotation so tissues start at their ZT phase.
+        --dur is the orbit period (all 20s = same circadian period).
+      -->
+
+      <!-- Hypothalamus: r=68, color=#facc15, initial phase=0° -->
+      <g class="orbit-body tissue-group" id="tg-hyp"
+         style="--dur:20s; --phase:0deg"
+         data-idx="0">
+        <circle class="hover-ring" cx="428" cy="360" r="14" fill="none" stroke="#facc15" stroke-width="1" opacity="0"/>
+        <circle cx="428" cy="360" r="7" fill="#facc15" filter="url(#glow)" id="dot-hyp"/>
+      </g>
+
+      <!-- Sk. Muscle: r=126, color=#fb923c, initial phase=95° -->
+      <g class="orbit-body tissue-group" id="tg-mus"
+         style="--dur:20s; --phase:95deg"
+         data-idx="1">
+        <circle class="hover-ring" cx="486" cy="360" r="13" fill="none" stroke="#fb923c" stroke-width="1" opacity="0"/>
+        <circle cx="486" cy="360" r="6" fill="#fb923c" filter="url(#glow)" id="dot-mus"/>
+      </g>
+
+      <!-- Liver: r=140, color=#c084fc, initial phase=200° -->
+      <g class="orbit-body tissue-group" id="tg-liv"
+         style="--dur:20s; --phase:200deg"
+         data-idx="2">
+        <circle class="hover-ring" cx="500" cy="360" r="13" fill="none" stroke="#c084fc" stroke-width="1" opacity="0"/>
+        <circle cx="500" cy="360" r="6" fill="#c084fc" filter="url(#glow)" id="dot-liv"/>
+      </g>
+
+      <!-- Adrenal: r=170, color=#34d399, initial phase=294° -->
+      <g class="orbit-body tissue-group" id="tg-adr"
+         style="--dur:20s; --phase:294deg"
+         data-idx="3">
+        <circle class="hover-ring" cx="530" cy="360" r="13" fill="none" stroke="#34d399" stroke-width="1" opacity="0"/>
+        <circle cx="530" cy="360" r="6" fill="#34d399" filter="url(#glow)" id="dot-adr"/>
+      </g>
+
+      <!-- Kidney: r=226, color=#60a5fa, initial phase=51° -->
+      <g class="orbit-body tissue-group" id="tg-kid"
+         style="--dur:20s; --phase:51deg"
+         data-idx="4">
+        <circle class="hover-ring" cx="586" cy="360" r="13" fill="none" stroke="#60a5fa" stroke-width="1" opacity="0"/>
+        <circle cx="586" cy="360" r="6.5" fill="#60a5fa" filter="url(#glow)" id="dot-kid"/>
+      </g>
+
+      <!-- Lung: r=298, color=#f472b6, initial phase=152° -->
+      <g class="orbit-body tissue-group" id="tg-lun"
+         style="--dur:20s; --phase:152deg"
+         data-idx="5">
+        <circle class="hover-ring" cx="658" cy="360" r="14" fill="none" stroke="#f472b6" stroke-width="1" opacity="0"/>
+        <circle cx="658" cy="360" r="7" fill="#f472b6" filter="url(#glow)" id="dot-lun"/>
+      </g>
+
+      <!-- Labels: positioned by JS so they stay upright regardless of orbit rotation -->
+      <g id="labels" font-family="Courier New"></g>
+
+    </svg>
+
+    <!-- ── Body anatomy map ── -->
+    <div id="bodyMap">
+      <div class="bm-title">body clock</div>
+      <!--
+        viewBox 0 0 120 252   centre-x=60
+        Organ positions (anatomically approximate, frontal view):
+          Hypothalamus/SCN : brain   (60, 24)
+          Lung             : bilateral chest  (42, 84) (78, 84)
+          Liver            : right upper abdomen  (76, 114)
+          Adrenal          : just above kidneys  (45, 109) (75, 109)
+          Kidney           : bilateral lower torso  (43, 122) (77, 122)
+          Sk. Muscle       : left thigh  (44, 194)
+      -->
+      <svg viewBox="0 0 120 252" width="88" height="185"
+           xmlns="http://www.w3.org/2000/svg" overflow="visible">
+        <defs>
+          <filter id="bGlow" x="-70%" y="-70%" width="240%" height="240%">
+            <feGaussianBlur stdDeviation="5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- ── Organ glow shapes (updated by JS) ── -->
+        <!-- Hypothalamus (brain) -->
+        <circle class="organ-shape" id="ob-hyp" cx="60" cy="24" r="13" fill="#facc15"/>
+
+        <!-- Lung (bilateral) -->
+        <ellipse class="organ-shape" id="ob-lun-l" cx="42" cy="85" rx="8"  ry="12" fill="#f472b6"/>
+        <ellipse class="organ-shape" id="ob-lun-r" cx="78" cy="85" rx="8"  ry="12" fill="#f472b6"/>
+
+        <!-- Liver (right upper abdomen) -->
+        <ellipse class="organ-shape" id="ob-liv"   cx="76" cy="114" rx="14" ry="9"  fill="#c084fc"/>
+
+        <!-- Adrenal (bilateral small caps atop kidneys) -->
+        <ellipse class="organ-shape" id="ob-adr-l" cx="45" cy="109" rx="5"  ry="4"  fill="#34d399"/>
+        <ellipse class="organ-shape" id="ob-adr-r" cx="75" cy="109" rx="5"  ry="4"  fill="#34d399"/>
+
+        <!-- Kidney (bilateral) -->
+        <ellipse class="organ-shape" id="ob-kid-l" cx="43" cy="122" rx="7"  ry="10" fill="#60a5fa"/>
+        <ellipse class="organ-shape" id="ob-kid-r" cx="77" cy="122" rx="7"  ry="10" fill="#60a5fa"/>
+
+        <!-- Sk. Muscle (left thigh) -->
+        <ellipse class="organ-shape" id="ob-mus"   cx="44" cy="194" rx="9"  ry="22" fill="#fb923c"/>
+
+        <!-- ── Body outline (drawn on top of glows so it reads cleanly) ── -->
+        <!-- Head -->
+        <circle cx="60" cy="24" r="18" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Neck -->
+        <line x1="54" y1="42" x2="54" y2="52" stroke="#1e3a5f" stroke-width="1.2"/>
+        <line x1="66" y1="42" x2="66" y2="52" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Shoulder straps -->
+        <path d="M54,52 L30,62 M66,52 L90,62" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Arms -->
+        <path d="M30,62 L22,66 L18,114 L20,128" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+        <path d="M90,62 L98,66 L102,114 L100,128" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Torso sides -->
+        <line x1="30" y1="62" x2="34" y2="154" stroke="#1e3a5f" stroke-width="1.2"/>
+        <line x1="90" y1="62" x2="86" y2="154" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Hips -->
+        <path d="M34,154 Q60,165 86,154" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Crotch -->
+        <path d="M47,160 Q60,153 73,160" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+        <!-- Legs -->
+        <line x1="47" y1="160" x2="43" y2="228" stroke="#1e3a5f" stroke-width="1.2"/>
+        <line x1="43" y1="228" x2="41" y2="252" stroke="#1e3a5f" stroke-width="1.2"/>
+        <line x1="73" y1="160" x2="77" y2="228" stroke="#1e3a5f" stroke-width="1.2"/>
+        <line x1="77" y1="228" x2="79" y2="252" stroke="#1e3a5f" stroke-width="1.2"/>
+
+        <!-- ── Organ name labels (colour-coded, transition with organ state) ── -->
+        <text class="bm-lbl" id="bl-hyp" x="60"  y="13"  fill="#facc15" text-anchor="middle">brain</text>
+        <text class="bm-lbl" id="bl-lun" x="60"  y="73"  fill="#f472b6" text-anchor="middle">lung</text>
+        <text class="bm-lbl" id="bl-liv" x="82"  y="128" fill="#c084fc" text-anchor="start">liver</text>
+        <text class="bm-lbl" id="bl-adr" x="60"  y="103" fill="#34d399" text-anchor="middle">adrenal</text>
+        <text class="bm-lbl" id="bl-kid" x="60"  y="137" fill="#60a5fa" text-anchor="middle">kidney</text>
+        <text class="bm-lbl" id="bl-mus" x="44"  y="220" fill="#fb923c" text-anchor="middle">muscle</text>
+      </svg>
+    </div>
+
+    <div id="tip"></div>
+  </div>
+
+  <aside>
+    <!-- Gene Overlay -->
+    <div class="gene-panel">
+      <div class="sec-label">Gene overlay</div>
+      <div class="gene-search-row">
+        <input type="text" id="geneInput" placeholder="e.g. Per2" class="gene-input"
+               autocomplete="off" spellcheck="false" maxlength="32"/>
+        <button class="gene-btn" id="geneSearchBtn">Search</button>
+        <button class="gene-btn clear" id="geneClearBtn" style="display:none">✕</button>
+      </div>
+      <div id="geneStatus" class="gene-status">Type a gene symbol to overlay coupling strength on the orrery</div>
+    </div>
+
+    <div class="jl-panel">
+      <div class="sec-label">Jet lag simulator</div>
+      <div class="dir-toggle">
+        <button class="dir-btn sel" id="btnEast">▶ Eastward</button>
+        <button class="dir-btn" id="btnWest">◀ Westward</button>
+      </div>
+      <div class="shift-row">
+        <div class="adj-group">
+          <button class="adj-btn" id="btnUp">▲</button>
+          <button class="adj-btn" id="btnDn">▼</button>
+        </div>
+        <div class="shift-disp">
+          <span id="shiftVal">+8</span>
+          <span class="unit">hours</span>
+        </div>
+        <div style="font-size:0.67rem;color:#475569;line-height:1.55;flex:1">
+          e.g. London<br>→ Tokyo
+        </div>
+      </div>
+      <button class="sim-btn" id="btnSim">▶ Simulate re-entrainment</button>
+      <div class="day-counter" id="dayCounter">
+        <div class="day-num" id="dayNum">Day 0.0</div>
+        <div class="day-label">of 14 simulated days</div>
+        <div class="day-track"><div class="day-fill" id="dayFill"></div></div>
+      </div>
+    </div>
+
+    <div class="realign-sec" id="realignSec">
+      <div class="sec-label">Re-alignment status</div>
+      <div class="chip-list" id="chipList"></div>
+    </div>
+
+    <div class="info-col">
+      <div id="geneInfoBox">
+        <!-- populated by JS when a gene is loaded -->
+      </div>
+      <div>
+        <div class="sec-label" style="margin-bottom:8px">Selected tissue</div>
+        <div class="info-box" id="infoBox">
+          <p class="hint">Hover or click any orbiting body to see its eigenvalue, τ_c, and what that means for jet-lag recovery.</p>
+        </div>
+      </div>
+      <div class="exp-box">
+        <strong style="color:#94a3b8;font-size:0.69rem;letter-spacing:0.08em">HOW TO READ THIS</strong><br><br>
+        Orbital radius = <strong style="color:#e2e8f0">τ<sub>c</sub></strong>, temporal memory. Tighter orbit = faster reset. Wider = longer re-entrainment lag.<br><br>
+        The SCN (hypothalamus) sits innermost — it resets in ≈2.6 h, adapting to a new time zone in ~1 day. Your lung orbits widest — 8.8 h memory — so it re-aligns days after your brain has settled.<br><br>
+        <span style="color:#60a5fa">Try the simulator →</span> set a time-zone shift and watch each organ converge at its own rate.
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ─── HARDCODED FALLBACK DATA (GSE54650, Δt=2h) ──────────────────────────────
+// τ_c = -Δt / ln(|λ|);  radii mapped linearly to [68,298] by τ_c range.
+const FALLBACK_TISSUES = [
+  { id:'hyp', name:'Hypothalamus', lambda:0.4691, tau_c:2.64, color:'#facc15', r:68,
+    plain:'The master pacemaker. Fastest to reset — adapts in ~1 day — but it must drag the rest of the body with it.',
+    clin:'SCN re-aligns first; peripheral organs take far longer' },
+  { id:'mus', name:'Sk. Muscle', lambda:0.6219, tau_c:4.21, color:'#fb923c', r:126,
+    plain:'Muscle clocks are driven by movement and meal timing as much as light. They lag ~1.5 days behind the SCN after a shift.',
+    clin:'Exercise timing can accelerate muscle re-entrainment' },
+  { id:'liv', name:'Liver', lambda:0.6413, tau_c:4.49, color:'#c084fc', r:140,
+    plain:'Strongly driven by when you eat. Night-shift meal timing can detach the liver clock from the SCN within 3–5 days.',
+    clin:'Meal timing overrides light for liver entrainment' },
+  { id:'adr', name:'Adrenal', lambda:0.6821, tau_c:5.22, color:'#34d399', r:170,
+    plain:'Translates SCN signals into cortisol — the body\'s wake-up hormone. Mid-hierarchy: both receiver and broadcaster.',
+    clin:'Cortisol rhythm shifts lag ~2 days after travel' },
+  { id:'kid', name:'Kidney', lambda:0.7377, tau_c:6.58, color:'#60a5fa', r:226,
+    plain:'Blood pressure and sodium excretion follow the kidney clock. Night-shift workers have elevated cardiovascular risk partly from chronic misalignment here.',
+    clin:'Blood pressure circadian peak takes ~2.2 days to shift' },
+  { id:'lun', name:'Lung', lambda:0.7966, tau_c:8.82, color:'#f472b6', r:298,
+    plain:'Highest |λ| across all 12 tissues. Lung phase memory persists 8.8 h — respiratory symptoms like asthma have pronounced circadian patterns that take 10–14 days to re-entrain.',
+    clin:'Asthma/COPD exacerbations peak during de-synchrony' },
+];
+
+// Live working copy — starts from fallback, overwritten by API results
+const TISSUES = FALLBACK_TISSUES.map(t => ({ ...t }));
+
+// ─── DATASET CONFIGURATIONS ─────────────────────────────────────────────────
+// Each entry maps orrery tissue id → platform datasetId for per-tissue API call.
+// GSE54650 sampling interval Δt=2h.
+// Additional dataset entries (e.g. baboon GSE98965 per-tissue) should be added
+// here once the platform exposes per-tissue endpoints for those datasets.
+const DATASET_CONFIGS = {
+  GSE54650: {
+    label: 'Mouse · GSE54650',
+    deltaT: 2,
+    species: 'Mus musculus',
+    tissueFetch: [
+      { id: 'hyp', datasetId: 'GSE54650_Hypothalamus_circadian' },
+      { id: 'mus', datasetId: 'GSE54650_Muscle_circadian' },
+      { id: 'liv', datasetId: 'GSE54650_Liver_circadian' },
+      { id: 'adr', datasetId: 'GSE54650_Adrenal_circadian' },
+      { id: 'kid', datasetId: 'GSE54650_Kidney_circadian' },
+      { id: 'lun', datasetId: 'GSE54650_Lung_circadian' },
+    ],
+  },
+  GSE98965: {
+    label: 'Baboon · GSE98965',
+    deltaT: 2,
+    species: 'Papio anubis',
+    // Per-tissue baboon datasets — each fetches a tissue-filtered slice of the
+    // GSE98965 multi-tissue FPKM file via the tissuePrefix API option.
+    // Tissue code map: SCN=hypothalamus, MUA=skeletal muscle, LIV=liver,
+    //                  ADC=adrenal cortex, KIC=kidney cortex, LUN=lung.
+    tissueFetch: [
+      { id: 'hyp', datasetId: 'GSE98965_baboon_SCN' },
+      { id: 'mus', datasetId: 'GSE98965_baboon_Muscle' },
+      { id: 'liv', datasetId: 'GSE98965_baboon_Liver' },
+      { id: 'adr', datasetId: 'GSE98965_baboon_Adrenal' },
+      { id: 'kid', datasetId: 'GSE98965_baboon_Kidney' },
+      { id: 'lun', datasetId: 'GSE98965_baboon_Lung' },
+    ],
+  },
+};
+
+// ─── LIVE DATA FETCH ────────────────────────────────────────────────────────
+let _summaryCache = {};   // datasetId → parsed JSON
+let _loadToken   = 0;    // monotonically incremented; stale callbacks are dropped
+
+/**
+ * Fetch summary for a dataset.
+ * @param {string} datasetId
+ * @param {boolean} [bust=false]  When true, bypasses the in-page cache and
+ *   appends a cache-busting query param so the browser/CDN also revalidates.
+ */
+async function fetchSummary(datasetId, bust = false) {
+  if (!bust && _summaryCache[datasetId]) return _summaryCache[datasetId];
+  const url = bust
+    ? `/api/processed-tables/summary/${datasetId}?v=${Date.now()}`
+    : `/api/processed-tables/summary/${datasetId}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  _summaryCache[datasetId] = data;
+  return data;
+}
+
+function tauFromLambda(lambda, deltaT) {
+  // τ_c = -Δt / ln(|λ|)
+  const absL = Math.abs(lambda);
+  if (absL <= 0 || absL >= 1) return null;
+  return -deltaT / Math.log(absL);
+}
+
+function remapRadii(R_MIN = 68, R_MAX = 298) {
+  const taus = TISSUES.map(t => t.tau_c);
+  const minT = Math.min(...taus), maxT = Math.max(...taus);
+  const span = maxT - minT || 1;
+  TISSUES.forEach(tis => {
+    const frac = (tis.tau_c - minT) / span;
+    tis.r = Math.round(R_MIN + frac * (R_MAX - R_MIN));
+    // Update SVG orbit ring
+    const ring = document.getElementById('ring-' + tis.id);
+    if (ring) ring.setAttribute('r', String(tis.r));
+    // Update dot x-position (y stays 360; dot is at cx=360+r)
+    const dot = document.getElementById('dot-' + tis.id);
+    if (dot) dot.setAttribute('cx', String(360 + tis.r));
+    // Update hover-ring
+    const tg = document.getElementById('tg-' + tis.id);
+    if (tg) {
+      const hr = tg.querySelector('.hover-ring');
+      if (hr) hr.setAttribute('cx', String(360 + tis.r));
+    }
+  });
+}
+
+function setStatus(state, text) {
+  const el = document.getElementById('dataStatus');
+  el.className = state;
+  el.textContent = '⬤ ' + text;
+}
+
+/**
+ * Load eigenvalue data for the given dataset key.
+ * @param {string} key  Key in DATASET_CONFIGS (e.g. 'GSE54650').
+ * @param {boolean} [bust=false]  When true, clears the in-page cache for all
+ *   datasets belonging to this config and appends a cache-bust query param so
+ *   the browser/CDN also revalidates.  Pass true on dataset switch and on the
+ *   manual Refresh action.
+ */
+async function loadDataset(key, bust = false) {
+  const cfg = DATASET_CONFIGS[key];
+  if (!cfg) return;
+
+  // On a forced refresh, evict all cached entries for this dataset's tiles
+  if (bust) {
+    cfg.tissueFetch.forEach(({ datasetId }) => { delete _summaryCache[datasetId]; });
+  }
+
+  // Claim this load slot; any prior in-flight load that completes later will see
+  // its token is stale and discard results — preventing race conditions.
+  const myToken = ++_loadToken;
+  setStatus('loading', bust ? 'refreshing…' : 'loading…');
+
+  const uniqueIds = [...new Set(cfg.tissueFetch.map(f => f.datasetId))];
+  const results = {};
+  let anyOk = false;
+
+  await Promise.allSettled(
+    uniqueIds.map(async id => {
+      try {
+        results[id] = await fetchSummary(id, bust);
+        anyOk = true;
+      } catch {
+        // fetchSummary failure — tissue falls back to hardcoded value below
+      }
+    })
+  );
+
+  // Guard: if another loadDataset call started while we were fetching, bail out
+  if (myToken !== _loadToken) return;
+
+  let liveCount = 0;
+  cfg.tissueFetch.forEach(({ id, datasetId }) => {
+    const data = results[datasetId];
+    const fallback = FALLBACK_TISSUES.find(t => t.id === id);
+    const tis = TISSUES.find(t => t.id === id);
+    if (!tis) return;
+
+    if (data && data.clockGenes && typeof data.clockGenes.meanEigenvalue === 'number') {
+      const lambda = data.clockGenes.meanEigenvalue;
+      const tau = tauFromLambda(lambda, cfg.deltaT);
+      if (tau !== null && tau > 0 && tau < 100) {
+        tis.lambda = lambda;
+        tis.tau_c  = tau;
+        liveCount++;
+      } else if (fallback) {
+        tis.lambda = fallback.lambda;
+        tis.tau_c  = fallback.tau_c;
+      }
+    } else if (fallback) {
+      tis.lambda = fallback.lambda;
+      tis.tau_c  = fallback.tau_c;
+    }
+  });
+
+  remapRadii();
+
+  // Update header subtitle
+  const totalGenes = (anyOk && results[uniqueIds[0]])
+    ? (results[uniqueIds[0]].clockGenes?.count ?? '—')
+    : '—';
+  document.getElementById('orrerySub').textContent =
+    `PAR(2) · ${cfg.label} · ${totalGenes} clock genes · ${liveCount} tissues`;
+
+  if (liveCount === cfg.tissueFetch.length) {
+    setStatus('live', 'live data');
+  } else if (liveCount > 0) {
+    setStatus('partial', `${liveCount}/${cfg.tissueFetch.length} live`);
+  } else {
+    setStatus('fallback', 'fallback values');
+  }
+}
+
+// ─── TISSUE DATA ────────────────────────────────────────────────────────────
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let shiftHours = 8;
+let eastward = true;
+let simRunning = false;
+let simDay = 0;
+let lockedIdx = -1;
+const SIM_DAYS = 14;
+const SECS_PER_DAY = 3;     // real seconds per simulated day
+const REALIGN_DEG = 7;      // degrees — "close enough" to target
+
+// Per-tissue jet lag state (JS-controlled, separate from CSS animation)
+TISSUES.forEach(tis => {
+  tis.phaseOffset = 0;     // degrees of current mis-alignment (0 = aligned)
+  tis.realigned = false;
+  tis.realignDay = null;
+});
+
+// ─── CSS ANIMATION CONTROL ──────────────────────────────────────────────────
+const allGroups = document.querySelectorAll('.orbit-body');
+let animPaused = false;
+
+function setPaused(p) {
+  animPaused = p;
+  allGroups.forEach(g => g.style.animationPlayState = p ? 'paused' : 'running');
+  document.getElementById('btnAnim').textContent = p ? 'Play' : 'Pause';
+  document.getElementById('btnAnim').classList.toggle('on', !p);
+}
+
+// ─── LABELS TOGGLE ──────────────────────────────────────────────────────────
+let labelsOn = true;
+function setLabels(on) {
+  labelsOn = on;
+  TISSUES.forEach(tis => {
+    const el = document.getElementById('label-' + tis.id);
+    if (el) el.style.display = on ? '' : 'none';
+  });
+  document.getElementById('btnLabels').classList.toggle('on', on);
+}
+
+// ─── JET LAG PHYSICS ────────────────────────────────────────────────────────
+// Each organ corrects its CSS animation's `animation-delay` to advance/retard phase.
+// We track the remaining angular error and shrink it per frame at rate ∝ 1/τ_c.
+// Re-entrainment rate (deg/simulated-day) = 360 / τ_c    (one full period per τ_c hours → 360°/τ_c days of 24h)
+// Per real-second: rate_deg_per_sec = (360 / τ_c) / SECS_PER_DAY
+
+let lastSimTs = null;
+let rafId = null;
+
+function simFrame(ts) {
+  if (!simRunning) return;
+  rafId = requestAnimationFrame(simFrame);
+
+  const dt = lastSimTs ? Math.min((ts - lastSimTs) / 1000, 0.05) : 0.016;
+  lastSimTs = ts;
+
+  simDay += dt / SECS_PER_DAY;
+  if (simDay >= SIM_DAYS) { simDay = SIM_DAYS; endSim(); }
+
+  TISSUES.forEach(tis => {
+    if (tis.realigned) return;
+    const rateDegPerSec = (360 / tis.tau_c) / SECS_PER_DAY;
+    const step = rateDegPerSec * dt;
+    if (Math.abs(tis.phaseOffset) <= step + REALIGN_DEG) {
+      tis.phaseOffset = 0;
+      tis.realigned = true;
+      tis.realignDay = simDay;
+      applyPhase(tis);
+      updateChip(tis);
+    } else {
+      tis.phaseOffset -= Math.sign(tis.phaseOffset) * step;
+      applyPhase(tis);
+    }
+  });
+
+  updateDayUI();
+  if (lockedIdx >= 0) updateInfoBox(lockedIdx);
+}
+
+function applyPhase(tis) {
+  // Adjust the animation-delay to shift phase.
+  // For a 20s period, 1° = 20/360 s of delay.
+  const period = 20; // seconds
+  const delayShift = -(tis.phaseOffset / 360) * period;
+  document.getElementById('tg-' + tis.id).style.animationDelay = delayShift + 's';
+}
+
+// ─── BODY MAP ORGAN STATES ──────────────────────────────────────────────────
+// Maps each tissue id → the SVG element ids that represent it anatomically.
+const ORGAN_ELS = {
+  hyp: ['ob-hyp'],
+  lun: ['ob-lun-l', 'ob-lun-r'],
+  liv: ['ob-liv'],
+  adr: ['ob-adr-l', 'ob-adr-r'],
+  kid: ['ob-kid-l', 'ob-kid-r'],
+  mus: ['ob-mus'],
+};
+// Single label element per tissue (combined bilateral labels)
+const LABEL_ELS = { hyp:'bl-hyp', lun:'bl-lun', liv:'bl-liv', adr:'bl-adr', kid:'bl-kid', mus:'bl-mus' };
+
+function setOrganState(tisId, state) {
+  // state: 'idle' | 'misaligned' | 'realigned'
+  (ORGAN_ELS[tisId] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('idle', 'misaligned', 'realigned');
+    if (state !== 'idle') el.classList.add(state);
+  });
+  const lbl = document.getElementById(LABEL_ELS[tisId]);
+  if (lbl) {
+    lbl.classList.remove('misaligned', 'realigned');
+    if (state !== 'idle') lbl.classList.add(state);
+  }
+}
+
+function startSim() {
+  const shiftDeg = (shiftHours / 24) * 360 * (eastward ? 1 : -1);
+  TISSUES.forEach(tis => {
+    tis.phaseOffset = shiftDeg;
+    tis.realigned = false;
+    tis.realignDay = null;
+    applyPhase(tis);
+    setOrganState(tis.id, 'misaligned');
+  });
+  simDay = 0;
+  simRunning = true;
+  lastSimTs = null;
+  buildChips();
+  document.getElementById('realignSec').classList.add('vis');
+  document.getElementById('dayCounter').classList.add('vis');
+  document.getElementById('btnSim').textContent = '■ Stop simulation';
+  document.getElementById('btnSim').classList.add('running');
+  rafId = requestAnimationFrame(simFrame);
+}
+
+function endSim() {
+  simRunning = false;
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  document.getElementById('btnSim').textContent = '▶ Simulate re-entrainment';
+  document.getElementById('btnSim').classList.remove('running');
+}
+
+function resetAll() {
+  endSim();
+  TISSUES.forEach(tis => {
+    tis.phaseOffset = 0;
+    tis.realigned = false;
+    tis.realignDay = null;
+    document.getElementById('tg-' + tis.id).style.animationDelay = '';
+    setOrganState(tis.id, 'idle');
+  });
+  simDay = 0;
+  document.getElementById('realignSec').classList.remove('vis');
+  document.getElementById('dayCounter').classList.remove('vis');
+  updateDayUI();
+  lockedIdx = -1;
+  clearInfo();
+}
+
+// ─── DAY UI ─────────────────────────────────────────────────────────────────
+function updateDayUI() {
+  document.getElementById('dayNum').textContent = 'Day ' + simDay.toFixed(1);
+  document.getElementById('dayFill').style.width = Math.min(simDay / SIM_DAYS * 100, 100).toFixed(1) + '%';
+}
+
+// ─── CHIPS ──────────────────────────────────────────────────────────────────
+function buildChips() {
+  const list = document.getElementById('chipList');
+  list.innerHTML = '';
+  TISSUES.forEach(tis => {
+    const div = document.createElement('div');
+    div.className = 'chip';
+    div.id = 'chip-' + tis.id;
+    div.innerHTML = `
+      <div class="chip-dot" style="background:${tis.color}"></div>
+      <span class="chip-name">${tis.name}</span>
+      <span class="chip-status" id="cs-${tis.id}">misaligned</span>
+    `;
+    list.appendChild(div);
+  });
+}
+function updateChip(tis) {
+  const chip = document.getElementById('chip-' + tis.id);
+  const cs   = document.getElementById('cs-'   + tis.id);
+  if (!chip || !cs) return;
+  chip.classList.add('done');
+  cs.textContent = 'Day ' + tis.realignDay.toFixed(1) + ' ✓';
+}
+
+// ─── TISSUE INFO ─────────────────────────────────────────────────────────────
+function updateInfoBox(idx) {
+  const tis = TISSUES[idx];
+  const jlLine = simRunning && !tis.realigned
+    ? `<div class="mrow"><span class="mk">phase gap remaining</span><span class="mv" style="color:#f87171">${(Math.abs(tis.phaseOffset)/360*24).toFixed(1)}h</span></div>`
+    : tis.realigned
+    ? `<div class="mrow"><span class="mk">re-aligned on</span><span class="mv" style="color:#34d399">Day ${tis.realignDay.toFixed(1)}</span></div>`
+    : '';
+  document.getElementById('infoBox').innerHTML = `
+    <h3 style="color:${tis.color}">${tis.name}</h3>
+    <div class="mrow"><span class="mk">|λ| eigenvalue</span><span class="mv">${tis.lambda.toFixed(4)}</span></div>
+    <div class="mrow"><span class="mk">τ_c</span><span class="mv">${tis.tau_c.toFixed(2)} h</span></div>
+    ${jlLine}
+    <div class="plain">${tis.plain}</div>
+  `;
+}
+function clearInfo() {
+  document.getElementById('infoBox').innerHTML =
+    '<p class="hint">Hover or click any orbiting body to see its eigenvalue, τ_c, and what that means for jet-lag recovery.</p>';
+}
+
+// ─── HOVER / CLICK ──────────────────────────────────────────────────────────
+const tip = document.getElementById('tip');
+
+TISSUES.forEach((tis, idx) => {
+  const el = document.getElementById('tg-' + tis.id);
+  if (!el) return;
+
+  el.addEventListener('mouseenter', e => {
+    if (lockedIdx < 0) updateInfoBox(idx);
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+    tip.textContent = `${tis.name}  |λ|=${tis.lambda.toFixed(4)}  τc=${tis.tau_c.toFixed(2)}h`;
+  });
+
+  el.addEventListener('mousemove', e => {
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+    if (simRunning && !tis.realigned)
+      tip.textContent = `${tis.name}  gap: ${(Math.abs(tis.phaseOffset)/360*24).toFixed(1)}h remaining`;
+  });
+
+  el.addEventListener('mouseleave', () => {
+    tip.style.display = 'none';
+    if (lockedIdx < 0) clearInfo();
+  });
+
+  el.addEventListener('click', () => {
+    lockedIdx = (lockedIdx === idx) ? -1 : idx;
+    updateInfoBox(lockedIdx >= 0 ? lockedIdx : idx);
+    if (lockedIdx < 0) clearInfo();
+  });
+});
+
+// ─── CONTROLS ───────────────────────────────────────────────────────────────
+let shiftVal = 8;
+function updateShift() {
+  shiftHours = shiftVal;
+  document.getElementById('shiftVal').textContent = (eastward ? '+' : '−') + shiftVal;
+}
+document.getElementById('btnUp').onclick = () => { shiftVal = Math.min(12, shiftVal+1); updateShift(); };
+document.getElementById('btnDn').onclick = () => { shiftVal = Math.max(1,  shiftVal-1); updateShift(); };
+document.getElementById('btnEast').onclick = () => { eastward=true;  document.getElementById('btnEast').classList.add('sel'); document.getElementById('btnWest').classList.remove('sel'); updateShift(); };
+document.getElementById('btnWest').onclick = () => { eastward=false; document.getElementById('btnWest').classList.add('sel'); document.getElementById('btnEast').classList.remove('sel'); updateShift(); };
+document.getElementById('btnSim').onclick = () => { simRunning ? endSim() : startSim(); };
+document.getElementById('btnAnim').onclick = () => setPaused(!animPaused);
+document.getElementById('btnLabels').onclick = () => setLabels(!labelsOn);
+document.getElementById('btnReset').onclick = resetAll;
+
+// ─── DATASET SELECTOR ───────────────────────────────────────────────────────
+document.getElementById('datasetSel').onchange = function() {
+  // Reset sim state before switching datasets so stale phases don't carry over
+  resetAll();
+  // Bust the cache on dataset switch so newly-selected dataset always reflects
+  // the current server-side eigenvalues, not a stale in-page entry.
+  loadDataset(this.value, true);
+};
+
+// ─── REFRESH BUTTON ─────────────────────────────────────────────────────────
+document.getElementById('btnRefresh').onclick = function() {
+  const key = document.getElementById('datasetSel').value;
+  loadDataset(key, true);
+};
+
+// Initial live-data load on page ready
+loadDataset('GSE54650');
+
+// ─── LABEL POSITIONING ──────────────────────────────────────────────────────
+// Labels live outside the rotating groups so they stay upright.
+// Each frame we read the dot's actual screen position and update the label SVG coords.
+const svg = document.getElementById('orrerySvg');
+const labelsGroup = document.getElementById('labels');
+
+// Build label elements once
+const labelEls = {};
+TISSUES.forEach(tis => {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.id = 'lbl-' + tis.id;
+  const t1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t1.setAttribute('fill', tis.color);
+  t1.setAttribute('font-size', '11');
+  t1.textContent = tis.name;
+  const t2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t2.setAttribute('fill', '#475569');
+  t2.setAttribute('font-size', '9');
+  t2.textContent = 'τc ' + tis.tau_c.toFixed(1) + 'h';
+  g.appendChild(t1); g.appendChild(t2);
+  labelsGroup.appendChild(g);
+  labelEls[tis.id] = { g, t1, t2 };
+});
+
+function updateLabels() {
+  if (!labelsOn) return;
+  const svgRect = svg.getBoundingClientRect();
+  if (svgRect.width === 0) return;
+  const scaleX = 720 / svgRect.width;
+  const scaleY = 720 / svgRect.height;
+
+  TISSUES.forEach(tis => {
+    const dot = document.getElementById('dot-' + tis.id);
+    if (!dot) return;
+    const dr = dot.getBoundingClientRect();
+    // dot centre in SVG viewport coordinates
+    const cx = (dr.left + dr.width  / 2 - svgRect.left) * scaleX;
+    const cy = (dr.top  + dr.height / 2 - svgRect.top)  * scaleY;
+
+    const angle = Math.atan2(cy - 360, cx - 360);
+    const offset = (tis.r < 120 ? 14 : 12);
+    // Place label radially outward from dot
+    const lx = cx + Math.cos(angle) * offset;
+    const ly = cy + Math.sin(angle) * offset;
+
+    const rightHalf = Math.cos(angle) > 0.2;
+    const leftHalf  = Math.cos(angle) < -0.2;
+    const anchor = rightHalf ? 'start' : leftHalf ? 'end' : 'middle';
+
+    const { t1, t2 } = labelEls[tis.id];
+    t1.setAttribute('x', lx); t1.setAttribute('y', ly);
+    t2.setAttribute('x', lx); t2.setAttribute('y', ly + 13);
+    t1.setAttribute('text-anchor', anchor);
+    t2.setAttribute('text-anchor', anchor);
+  });
+}
+
+function labelLoop() {
+  updateLabels();
+  requestAnimationFrame(labelLoop);
+}
+requestAnimationFrame(labelLoop);
+
+// ─── GENE OVERLAY ────────────────────────────────────────────────────────────
+
+// Maps API tissueCoupling tissue names → orrery tissue IDs
+const TISSUE_NAME_MAP = {
+  'Hypothalamus': 'hyp',
+  'Muscle':       'mus',
+  'Liver':        'liv',
+  'Adrenal':      'adr',
+  'Kidney':       'kid',
+  'Lung':         'lun',
+};
+
+// Store original dot radii so we can restore them
+const ORIGINAL_DOT_R = {};
+TISSUES.forEach(tis => {
+  ORIGINAL_DOT_R[tis.id] = null;  // filled lazily from DOM on first overlay
+});
+
+let geneOverlayActive = false;
+
+function getOriginalDotR(tisId) {
+  if (!ORIGINAL_DOT_R[tisId]) {
+    const dot = document.getElementById('dot-' + tisId);
+    ORIGINAL_DOT_R[tisId] = dot ? parseFloat(dot.getAttribute('r')) : 7;
+  }
+  return ORIGINAL_DOT_R[tisId];
+}
+
+function applyGeneOverlay(tissueCoupling, crossDataset) {
+  // Build per-tissue coupling strength map (use |deltaAIC| as strength metric)
+  const strengthMap = {};
+  let maxAbs = 0;
+  tissueCoupling.results.forEach(r => {
+    const tisId = TISSUE_NAME_MAP[r.tissue];
+    if (!tisId) return;
+    const strength = Math.abs(r.deltaAIC);
+    strengthMap[tisId] = { strength, significant: r.significant, amplitude: r.amplitude, pValue: r.pValue, deltaAIC: r.deltaAIC };
+    if (strength > maxAbs) maxAbs = strength;
+  });
+
+  // If all deltaAIC values are 0, fall back to amplitude
+  const allZero = Object.values(strengthMap).every(v => v.strength === 0);
+  if (allZero) {
+    let maxAmp = 0;
+    Object.values(strengthMap).forEach(v => { if (v.amplitude > maxAmp) maxAmp = v.amplitude; });
+    if (maxAmp > 0) {
+      Object.keys(strengthMap).forEach(id => {
+        strengthMap[id].strength = strengthMap[id].amplitude;
+      });
+      maxAbs = maxAmp;
+    }
+  }
+
+  TISSUES.forEach(tis => {
+    const dot = document.getElementById('dot-' + tis.id);
+    if (!dot) return;
+    const baseR = getOriginalDotR(tis.id);
+    const info = strengthMap[tis.id];
+
+    if (!info || maxAbs === 0) {
+      // No data for this tissue — dim it
+      dot.setAttribute('r', String(baseR * 0.55));
+      dot.style.opacity = '0.25';
+      return;
+    }
+
+    const norm = info.strength / maxAbs;   // 0..1
+    // Scale radius: 0.5× base (weakest) → 1.9× base (strongest)
+    const newR = baseR * (0.5 + norm * 1.4);
+    dot.setAttribute('r', String(newR.toFixed(2)));
+    // Opacity: significant tissues bright, others dimmed
+    dot.style.opacity = info.significant ? '1' : '0.35';
+    dot.style.filter = info.significant ? `url(#glow) brightness(${(0.8 + norm * 0.8).toFixed(2)})` : 'url(#glow) opacity(0.4)';
+  });
+}
+
+function clearGeneOverlay() {
+  TISSUES.forEach(tis => {
+    const dot = document.getElementById('dot-' + tis.id);
+    if (!dot) return;
+    const baseR = getOriginalDotR(tis.id);
+    dot.setAttribute('r', String(baseR));
+    dot.style.opacity = '';
+    dot.style.filter = '';
+  });
+  document.getElementById('geneInfoBox').classList.remove('vis');
+  document.getElementById('geneInfoBox').innerHTML = '';
+  document.getElementById('geneClearBtn').style.display = 'none';
+  document.getElementById('geneInput').value = '';
+  setGeneStatus('', '');
+  geneOverlayActive = false;
+}
+
+function setGeneStatus(cls, msg) {
+  const el = document.getElementById('geneStatus');
+  el.className = 'gene-status' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+}
+
+// Safe helper: create element, set text, optional attrs
+function el(tag, text, attrs) {
+  const e = document.createElement(tag);
+  if (text !== undefined && text !== null) e.textContent = text;
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => { e.style[k] = v; });
+  return e;
+}
+function mrow(label, value, valueStyle) {
+  const d = document.createElement('div');
+  d.className = 'mrow';
+  const k = el('span', label); k.className = 'mk'; d.appendChild(k);
+  const v = el('span', value); v.className = 'mv';
+  if (valueStyle) v.style.cssText = valueStyle;
+  d.appendChild(v);
+  return d;
+}
+
+function renderGeneInfoBox(data) {
+  const cd = data.par2.crossDataset;
+  const tc = data.par2.tissueCoupling;
+  const box = document.getElementById('geneInfoBox');
+  box.innerHTML = '';  // clear safely; no user content yet
+
+  // Title row: gene name + lit badge
+  const h3 = document.createElement('h3');
+  const geneName = el('span', data.gene);
+  geneName.style.color = '#60a5fa';
+  h3.appendChild(geneName);
+  const spacer = document.createTextNode('\u00a0\u00a0');
+  h3.appendChild(spacer);
+  const litBadge = el('span', data.literature.found ? '✓ lit-confirmed' : 'no lit entry');
+  litBadge.style.cssText = 'font-size:0.65rem;font-family:Courier New,monospace;color:' +
+    (data.literature.found ? '#34d399' : '#94a3b8');
+  h3.appendChild(litBadge);
+  box.appendChild(h3);
+
+  // Eigenvalue stats (numeric — safe to format)
+  const minEV = cd.minEigenvalue !== null ? cd.minEigenvalue.toFixed(4) : '—';
+  const maxEV = cd.maxEigenvalue !== null ? cd.maxEigenvalue.toFixed(4) : '—';
+  const meanEV = cd.meanEigenvalue !== null ? cd.meanEigenvalue.toFixed(4) : '—';
+  // Count coupled/total from only the 6 orrery-mapped tissues (not all 12 API tissues)
+  const orreryMapped = tc.results.filter(r => TISSUE_NAME_MAP[r.tissue]);
+  const nCoupled = orreryMapped.filter(r => r.significant).length;
+  const nTotal = orreryMapped.length;
+
+  box.appendChild(mrow('coupling data', 'GSE54650 · mouse', 'color:#64748b'));
+  box.appendChild(mrow('cross-dataset |λ| range', minEV + ' – ' + maxEV));
+  box.appendChild(mrow('mean |λ|', meanEV));
+  box.appendChild(mrow('orrery tissues coupled', nCoupled + '/' + nTotal, 'color:#60a5fa'));
+
+  // Divider
+  const hr = document.createElement('div');
+  hr.style.cssText = 'border-top:1px solid rgba(255,255,255,0.08);margin:7px 0 5px';
+  box.appendChild(hr);
+
+  // Legend
+  const legend = el('div', '★ significant  ○ not significant');
+  legend.style.cssText = 'font-size:0.63rem;color:#64748b;font-family:Courier New,monospace;margin-bottom:5px';
+  box.appendChild(legend);
+
+  // Per-tissue rows — use TISSUE_NAME_MAP to restrict to known tissues
+  const orreryTissues = tc.results
+    .filter(r => TISSUE_NAME_MAP[r.tissue])
+    .sort((a, b) => Math.abs(b.deltaAIC) - Math.abs(a.deltaAIC));
+
+  orreryTissues.forEach(r => {
+    const tis = TISSUES.find(t => t.id === TISSUE_NAME_MAP[r.tissue]);
+    const color = tis ? tis.color : '#94a3b8';
+    const sigColor = r.significant ? '#34d399' : '#475569';
+    const sigMark = r.significant ? '★' : '○';
+    const sign = r.deltaAIC > 0 ? '+' : '';
+    const row = document.createElement('div');
+    row.className = 'mrow';
+    row.style.alignItems = 'center';
+    const kSpan = el('span', r.tissue); kSpan.className = 'mk'; kSpan.style.color = color;
+    const vSpan = el('span', sigMark + ' ΔAIC ' + sign + r.deltaAIC.toFixed(1));
+    vSpan.className = 'mv'; vSpan.style.color = sigColor;
+    row.appendChild(kSpan); row.appendChild(vSpan);
+    box.appendChild(row);
+  });
+
+  // Summary text (API-generated, but may echo user input — render as text)
+  const summary = el('div', data.connection.agreementSummary);
+  summary.className = 'plain';
+  summary.style.fontSize = '0.67rem';
+  box.appendChild(summary);
+
+  box.classList.add('vis');
+}
+
+async function searchGene() {
+  const raw = document.getElementById('geneInput').value.trim();
+  if (!raw) return;
+  setGeneStatus('', 'fetching…');
+  document.getElementById('geneSearchBtn').disabled = true;
+  try {
+    const res = await fetch('/api/gene-profile?gene=' + encodeURIComponent(raw));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (!data.par2 || !data.par2.tissueCoupling) {
+      throw new Error('Unexpected API response');
+    }
+    if (data.par2.tissueCoupling.tissuesAnalyzed === 0 && data.par2.crossDataset.datasetsFound === 0) {
+      setGeneStatus('err', `"${raw}" not found in any dataset`);
+      document.getElementById('geneSearchBtn').disabled = false;
+      return;
+    }
+    applyGeneOverlay(data.par2.tissueCoupling, data.par2.crossDataset);
+    renderGeneInfoBox(data);
+    document.getElementById('geneClearBtn').style.display = '';
+    geneOverlayActive = true;
+    // Count only the 6 orrery-mapped tissues for the status label
+    const mapped = data.par2.tissueCoupling.results.filter(r => TISSUE_NAME_MAP[r.tissue]);
+    const nCoupled = mapped.filter(r => r.significant).length;
+    const nTotal   = mapped.length;
+    setGeneStatus('ok', data.gene + ' · ' + nCoupled + '/' + nTotal + ' orrery tissues coupled (GSE54650)');
+  } catch (e) {
+    setGeneStatus('err', String(e.message || e));
+  }
+  document.getElementById('geneSearchBtn').disabled = false;
+}
+
+document.getElementById('geneSearchBtn').onclick = searchGene;
+document.getElementById('geneClearBtn').onclick = clearGeneOverlay;
+document.getElementById('geneInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') searchGene();
+});
+
+// Note: gene-profile coupling data is always sourced from GSE54650 (mouse).
+// Switching to the baboon dataset changes the orrery orbits but the overlay
+// dot-sizing always reflects mouse tissue coupling — this is labelled in the
+// info box ("coupling data: GSE54650 · mouse") so users are not misled.
+</script>
+</body>
+</html>

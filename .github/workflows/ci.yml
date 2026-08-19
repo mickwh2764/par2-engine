@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # package-lock.json is gitignored (regenerated on install), so there is
+      # nothing for setup-node's npm cache or `npm ci` to work from.
+      - run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Verify build outputs
+        run: |
+          test -f dist/index.cjs || (echo "Missing dist/index.cjs" && exit 1)
+          test -f dist/public/index.html || (echo "Missing dist/public/index.html" && exit 1)
+          echo "Build outputs verified"
+      - name: Security audit
+        run: npm audit --audit-level=high

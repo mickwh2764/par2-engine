@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAR(2) — How Your Body Keeps Time</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #030b19;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
+    color: #c8d8f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 56px;
+  }
+
+  /* ── Header ── */
+  .header { text-align: center; max-width: 700px; margin-bottom: 28px; }
+  .header h1 { font-size: 1.65rem; color: #d4aa50; letter-spacing: 0.04em; margin-bottom: 8px; font-weight: normal; }
+  .header p { font-size: 0.9rem; color: #6a88b0; line-height: 1.7; }
+
+  /* ── Main layout ── */
+  .main { display: flex; gap: 28px; align-items: flex-start; width: 100%; max-width: 1080px; }
+  .diagram-col { flex: 0 0 620px; display: flex; flex-direction: column; gap: 0; }
+  .side-col { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── SVG wrap ── */
+  .svg-wrap { position: relative; }
+  svg { width: 100%; height: auto; display: block; cursor: default; }
+
+  /* ── Zone guide (numbered tiles below the diagram) ── */
+  .zone-guide {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .zone-tile {
+    background: #07111e;
+    border: 1px solid #1a2e48;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: default;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .zone-tile:hover { border-color: #3a6090; background: #0b1a2e; }
+  .zone-tile-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .zone-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: bold; flex-shrink: 0;
+    color: #030b19;
+  }
+  .zone-tile-title { font-size: 0.82rem; font-weight: 600; color: #c0cce0; }
+  .zone-tile-body { font-size: 0.74rem; color: #5a7898; line-height: 1.55; }
+
+  /* ── Info panel (right column) ── */
+  .info-panel {
+    background: #07111e;
+    border: 1px solid #1a2e48;
+    border-radius: 10px;
+    padding: 20px 18px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+  .info-panel.active { border-color: #3a6090; }
+  .info-panel.locked { border-color: #8a7020; }
+
+  .lock-pill {
+    position: absolute; top: 12px; right: 14px;
+    background: #2a2008; border: 1px solid #6a5010; border-radius: 20px;
+    font-size: 0.66rem; color: #c8a030; padding: 2px 8px; letter-spacing: 0.08em;
+    opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  }
+  .info-panel.locked .lock-pill { opacity: 1; }
+
+  .panel-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; gap: 14px; text-align: center; opacity: 1; transition: opacity 0.2s;
+  }
+  .panel-empty.hidden { opacity: 0; pointer-events: none; position: absolute; }
+  .panel-empty-icon { font-size: 2rem; opacity: 0.4; }
+  .panel-empty-title { font-size: 0.9rem; color: #4a6888; }
+  .panel-empty-sub { font-size: 0.78rem; color: #2e4060; line-height: 1.6; max-width: 200px; }
+
+  .panel-content { display: none; flex-direction: column; gap: 10px; }
+  .panel-content.visible { display: flex; }
+
+  .panel-badge { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #3a5878; }
+  .panel-name { font-size: 1.15rem; color: #d8c870; font-weight: 600; line-height: 1.3; }
+  .panel-plain {
+    background: #0a1828;
+    border-left: 3px solid #3a6090;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    color: #90b8d8;
+    line-height: 1.65;
+  }
+  .panel-plain-label { font-size: 0.65rem; letter-spacing: 0.12em; color: #2e5080; margin-bottom: 4px; text-transform: uppercase; }
+
+  .panel-events { display: flex; flex-direction: column; gap: 6px; }
+  .event-row { display: flex; gap: 8px; align-items: flex-start; }
+  .event-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .event-text { font-size: 0.79rem; color: #7a9ab8; line-height: 1.5; }
+
+  details.science-details { border-top: 1px solid #122030; padding-top: 10px; }
+  details.science-details summary {
+    font-size: 0.72rem; color: #3a5878; cursor: pointer; letter-spacing: 0.06em;
+    list-style: none; display: flex; align-items: center; gap: 6px;
+  }
+  details.science-details summary::before { content: '▶'; font-size: 0.6rem; transition: transform 0.15s; }
+  details[open].science-details summary::before { transform: rotate(90deg); }
+  .science-body { font-size: 0.76rem; color: #5a7898; line-height: 1.65; margin-top: 8px; }
+  .science-stat { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .science-stat-label { font-size: 0.7rem; color: #3a5878; min-width: 60px; }
+  .science-stat-val { font-size: 0.82rem; color: #7090a8; font-weight: 600; }
+  .science-bar { flex: 1; height: 4px; background: #0e1c30; border-radius: 2px; overflow: hidden; }
+  .science-bar-fill { height: 100%; border-radius: 2px; }
+  .ci-note { font-size: 0.7rem; color: #4a6840; font-style: italic; margin-top: 6px; }
+
+  .lock-hint { font-size: 0.7rem; color: #2a4060; text-align: center; font-style: italic; margin-top: auto; }
+
+  /* ── Controls ── */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 0; }
+  button {
+    background: #0a1828; border: 1px solid #1e3a58; border-radius: 20px;
+    color: #7a9ab8; font-size: 0.78rem; padding: 6px 16px; cursor: pointer;
+    transition: all 0.18s; font-family: inherit; letter-spacing: 0.03em;
+  }
+  button:hover { background: #122030; border-color: #3a6090; color: #b0d0f0; }
+  button.on { background: #1a3050; border-color: #5a90c0; color: #c8e0f8; }
+  button.danger-on { background: #2a0e0e; border-color: #8a2a2a; color: #e08080; }
+
+  /* ── Responsive ── */
+  @media (max-width: 860px) {
+    .main { flex-direction: column; }
+    .diagram-col { flex: none; width: 100%; }
+    .side-col { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>How Your Body Keeps Time</h1>
+  <p>Your body runs on a 24-hour clock — but it's not one clock, it's dozens. Every organ has its own timekeeper, and they're all synchronised by the brain. This diagram shows that hierarchy, and what happens when it breaks down.</p>
+</div>
+
+<div class="main">
+
+  <!-- ── LEFT: Diagram + zone guide ── -->
+  <div class="diagram-col">
+    <div class="svg-wrap">
+      <svg id="diagram" viewBox="-20 -20 840 840" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="zone-guide" id="zoneGuide">
+      <div class="zone-tile" id="zt1">
+        <div class="zone-tile-header">
+          <div class="zone-num" style="background:#c8a030">1</div>
+          <div class="zone-tile-title">The 24-hour body clock</div>
+        </div>
+        <div class="zone-tile-body">The gold ring is your master 24-hour cycle, driven by light hitting your eyes. <strong style="color:#888">Hover the ring</strong> to see what's happening at each time of day.</div>
+      </div>
+      <div class="zone-tile" id="zt2">
+        <div class="zone-tile-header">
+          <div class="zone-num" style="background:#4a7ab0">2</div>
+          <div class="zone-tile-title">Chemical messengers</div>
+        </div>
+        <div class="zone-tile-body">The dark gear ring carries 6 signals from the brain to body tissues — cortisol, temperature, nerve signals, and more. <strong style="color:#888">Hover the labels</strong> to learn about each one.</div>
+      </div>
+      <div class="zone-tile" id="zt3">
+        <div class="zone-tile-header">
+          <div class="zone-num" style="background:#c84020">3</div>
+          <div class="zone-tile-title">Organ clocks</div>
+        </div>
+        <div class="zone-tile-body">Each coloured ring is an organ with its own clock. The further out, the harder it is to shift — lung (outermost) takes 3.3× longer to adjust than the brain. <strong style="color:#888">Hover any ring.</strong></div>
+      </div>
+      <div class="zone-tile" id="zt4">
+        <div class="zone-tile-header">
+          <div class="zone-num" style="background:#5a90e0">4</div>
+          <div class="zone-tile-title">The brain master clock</div>
+        </div>
+        <div class="zone-tile-body">The blue centre (SCN) is the brain's master clock. Paradoxically it resets the fastest — it's a sensitive sensor, not a rigid keeper. The gold dashed ring marks where most clock genes cluster.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Info panel + controls ── -->
+  <div class="side-col">
+    <div class="info-panel" id="infoPanel">
+      <div class="lock-pill" id="lockPill">📌 PINNED</div>
+
+      <!-- Empty state -->
+      <div class="panel-empty" id="panelEmpty">
+        <div class="panel-empty-icon">🕐</div>
+        <div class="panel-empty-title">Explore the diagram</div>
+        <div class="panel-empty-sub">Hover any ring, label, or the outer gold clock to learn what it means. Click to pin the panel open.</div>
+      </div>
+
+      <!-- Content (hidden until hover) -->
+      <div class="panel-content" id="panelContent">
+        <div class="panel-badge" id="panelBadge"></div>
+        <div class="panel-name" id="panelName"></div>
+        <div class="panel-plain" id="panelPlain">
+          <div class="panel-plain-label">In plain English</div>
+          <div id="panelPlainText"></div>
+        </div>
+        <div class="panel-events" id="panelEvents"></div>
+        <details class="science-details" id="scienceDetails">
+          <summary>The science</summary>
+          <div class="science-body" id="scienceBody"></div>
+          <div id="scienceStats"></div>
+          <div class="ci-note" id="ciNote"></div>
+        </details>
+        <div class="lock-hint" id="lockHint">Click the diagram to pin this panel</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btnSpeed" class="on">⏱ Real-time clock</button>
+      <button id="btnDisease">🔴 Disease mode</button>
+      <button id="btnReset">↺ Reset</button>
+    </div>
+
+    <!-- What is PAR(2)? -->
+    <div style="background:#07111e;border:1px solid #1a2e48;border-radius:10px;padding:16px 18px;font-size:0.78rem;color:#5a7898;line-height:1.7;">
+      <div style="font-size:0.82rem;color:#8ab0c8;font-weight:600;margin-bottom:6px;">What is PAR(2)?</div>
+      PAR(2) is a mathematical framework that fits each organ's 24-hour gene expression data to a simple model (an AR(2) process), then measures how "sticky" each organ's clock is. The stickiness is the <em>eigenvalue</em> |λ| — a number between 0 and 1. Higher = harder to shift = more inertial. The rings in this diagram are placed at each organ's measured |λ|. The needle on the gauge above tracks whichever ring you're hovering.
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #122030;color:#3a5878;">
+        <strong style="color:#6a8898">Disease mode</strong> simulates what happens in cancer or metabolic disease — the hierarchy collapses as peripheral organ clocks drift toward |λ| = 1 (runaway) while the SCN loses its ability to dominate.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+
+const TISSUES = [
+  {
+    id: 'scn', label: 'Brain master clock (SCN)', shortLabel: 'SCN',
+    lam: 0.469, tau: 2.6,
+    color: '#5a90e0', glow: '#7ab0ff', labelAngle: 270,
+    plain: 'This is the control room in your brain that keeps all your other clocks in sync. Surprisingly, it resets the fastest — because a good conductor needs to be responsive, not rigid.',
+    desc: 'The suprachiasmatic nucleus (SCN) has the lowest eigenvalue modulus (|λ|=0.469) of any tissue. Low |λ| means fast mean-reversion — rapid adaptation to perturbation. This makes the SCN a sensitive phase sensor rather than a robust integrator. Peripheral tissues must be slow integrators (high |λ|) to sustain timing against noise while still following the SCN signal.',
+    dataset: 'GTEx + GSE54650', ci: null,
+  },
+  {
+    id: 'brainstem', label: 'Brainstem', shortLabel: 'Brainstem',
+    lam: 0.596, tau: 5.8,
+    color: '#4a98b0', glow: '#6ab8d0', labelAngle: 155,
+    plain: 'The relay station between the master clock and the rest of the body. It controls breathing rate, heart rate, and digestion — all of which follow a 24-hour rhythm.',
+    desc: 'Brainstem nuclei relay SCN phase to autonomic output. Respiratory rate, heart-rate variability, and digestive motility all show circadian modulation traceable to brainstem oscillators. |λ|=0.596 places it just below the Fibonacci boundary.',
+    dataset: 'GTEx', ci: null,
+  },
+  {
+    id: 'muscle', label: 'Skeletal muscle', shortLabel: 'Muscle',
+    lam: 0.622, tau: 6.4,
+    color: '#70a060', glow: '#90c080', labelAngle: 193,
+    plain: 'Your muscles perform best in the late afternoon — roughly 3–5pm. This is when your body clock coordinates peak strength, reaction time, and metabolic efficiency.',
+    desc: 'Skeletal muscle sits just above the Fibonacci boundary 1/φ ≈ 0.618. Clock-controlled metabolic genes (PGC-1α, NAMPT) concentrate near this boundary. The muscle clock gates fuel switching between glycolysis and oxidative phosphorylation.',
+    dataset: 'GSE54650', ci: null,
+  },
+  {
+    id: 'liver', label: 'Liver', shortLabel: 'Liver',
+    lam: 0.641, tau: 6.9,
+    color: '#78b050', glow: '#98d070', labelAngle: 145,
+    plain: 'Your liver uses its clock to decide when to release glucose into your blood. Shift workers and people with irregular meal timing often have disrupted liver clocks — which is partly why shift work raises diabetes risk.',
+    desc: 'The liver clock gates gluconeogenesis via the glucocorticoid → GRE → BMAL1 axis. PEPCK and G6Pase transcription peak in phase with cortisol at ZT4–6. REV-ERBα and WEE1 provide additional circadian control over hepatic lipid and bile-acid metabolism.',
+    dataset: 'GSE54650', ci: null,
+  },
+  {
+    id: 'heart', label: 'Heart', shortLabel: 'Heart',
+    lam: 0.698, tau: 8.0,
+    color: '#c89030', glow: '#e8b050', labelAngle: 105,
+    plain: 'Your heart has its own clock that coordinates with the nervous system. Most heart attacks happen in the morning — partly because the heart clock gates which cellular processes are active and when.',
+    desc: 'The cardiac clock integrates autonomic, hormonal (cortisol, adrenaline), and metabolic timing. Higher |λ| relative to the SCN reflects the need for stable output against beat-to-beat noise. Myocardial infarction risk peaks at ZT4–8, coinciding with sympathetic surge and coagulation factor peaks.',
+    dataset: 'GSE54650', ci: null,
+  },
+  {
+    id: 'kidney', label: 'Kidney', shortLabel: 'Kidney',
+    lam: 0.738, tau: 9.0,
+    color: '#d87040', glow: '#f09060', labelAngle: 65,
+    plain: 'Your kidneys filter blood more efficiently in the morning. Blood pressure drugs work better when taken in the evening — because that\'s when the kidney clock is preparing for the overnight shift.',
+    desc: 'Renal GFR and tubular reabsorption peak in the circadian morning. Clock genes in the collecting duct gate NHE3 (Na⁺/H⁺ exchanger). Chronotherapy trials show evening antihypertensives reduce cardiovascular events more than morning dosing.',
+    dataset: 'GSE54650', ci: null,
+  },
+  {
+    id: 'lung', label: 'Lung', shortLabel: 'Lung',
+    lam: 0.797, tau: 8.8,
+    color: '#c84020', glow: '#e86040', labelAngle: 25,
+    plain: 'The hardest organ to shift. When you fly across time zones, your lung clock takes over 3 days to fully adjust — 3.3× longer than the brain. This is the main reason jet lag affects breathing, sleep quality, and general wellbeing for days after landing.',
+    desc: 'Lung has the highest measured |λ| of any tissue. |λ|=0.797 predicts lung clocks take 3.33× longer to re-entrain than the SCN — confirmed pre-specified in the baboon dataset. Lung airway resistance shows peak circadian amplitude (~50% variation), explaining nocturnal asthma.',
+    dataset: 'GSE54650', ci: [0.718, 0.864],
+  },
+];
+
+const PATHWAYS = [
+  {
+    id: 'gluco', label: 'Cortisol', sub: 'adrenal → liver, heart, lung', angle: 0,
+    plain: 'The "wake-up signal." Cortisol peaks at about 6am and tells the liver to release glucose, raises blood pressure, and prepares the immune system for the day ahead. Disrupting this signal (night shifts, Cushing\'s disease) disconnects the liver\'s clock from the brain\'s.',
+    desc: 'Cortisol peaks at ZT4–6, triggering PEPCK and G6Pase in liver via GRE elements adjacent to E-box clock sequences. BMAL1 occupancy at GRE sites is circadian-gated — one of the clearest molecular bridges between the SCN signal and peripheral metabolic output.',
+  },
+  {
+    id: 'reverb', label: 'BMAL1 / REV-ERBα', sub: 'the molecular feedback loop', angle: 60,
+    plain: 'The actual molecular gears of each cell\'s clock. BMAL1 turns genes on, then the products of those genes turn BMAL1 off — a cycle that takes about 24 hours. REV-ERBα is the brake that resets the system each day.',
+    desc: 'The TTFL: BMAL1:CLOCK activates Per1/2 and Cry1/2; PER:CRY represses BMAL1:CLOCK; REV-ERBα represses Bmal1 directly. The ~24h period emerges when the loop eigenvalue |λ|<1. Clock gene targets cluster at the Fibonacci boundary.',
+  },
+  {
+    id: 'wnt', label: 'WNT / β-catenin', sub: 'gut stem cell timing', angle: 120,
+    plain: 'Controls when cells in your gut divide and replace themselves. The body clock keeps this tightly gated to the morning. When the gate breaks — as happens in most colorectal cancers — cells divide uncontrolled around the clock.',
+    desc: 'BMAL1 drives WNT signalling at ZT8–12, gating Lgr5+ crypt stem-cell division. APC mutation (colorectal cancer) constitutively activates β-catenin, collapsing the circadian gate. This is the mechanistic link between clock disruption and CRC risk.',
+  },
+  {
+    id: 'temp', label: 'Body temperature', sub: 'SCN → peripheral reset', angle: 180,
+    plain: 'Your core temperature rises and falls by about 1°C over 24 hours — and that small swing is enough to reset the clocks in your liver, muscles and lungs. It\'s one of the body\'s most reliable timing signals.',
+    desc: 'A 0.5–1.0°C circadian oscillation (trough ~ZT4, peak ~ZT17) resets peripheral clocks via HSP90/HSF1→BMAL1. This thermosensitive pathway is the dominant entrainment signal for liver and muscle when food timing is unconstrained.',
+  },
+  {
+    id: 'wee1', label: 'WEE1 / cell division', sub: 'G2/M checkpoint timing', angle: 240,
+    plain: 'The body clock controls when cells are allowed to divide. WEE1 is the gatekeeper — it holds cells at the final checkpoint before division, and the body clock determines when the gate opens. This is why some cancers and some cancer drugs interact with circadian timing.',
+    desc: 'WEE1 phosphorylates CDK1-Tyr15, delaying mitosis at G2/M. BMAL1 directly drives Wee1 transcription, creating a circadian gate on cell division. WEE1 inhibitors (AZD1775) disrupt this gate and are studied as chronotherapy targets.',
+  },
+  {
+    id: 'auto', label: 'Nerve signals', sub: 'autonomic nervous system', angle: 300,
+    plain: 'Direct nerve wires from the brain clock to the liver, independent of hormones. Cutting these nerves shifts the liver\'s clock by an hour and weakens its response to meal timing — showing that the brain doesn\'t just use hormones to send time signals.',
+    desc: 'Hepatic sympathetic and parasympathetic fibres transmit phase signals from SCN to liver independently of the hormonal route. Hepatic denervation blunts circadian glucose regulation and phase-advances the liver clock by ~1h.',
+  },
+];
+
+const CLOCK_SECTORS = [
+  {
+    label: 'Midnight to 4am · ZT0–4',
+    accent: '#4a68a8',
+    fill: '#101828', highlight: '#182238',
+    plain: 'The body is at its daily low point. Temperature is at its coldest, the brain clock is quietest, and growth hormone is being released — your body uses this window for deep repair and cellular maintenance.',
+    events: [
+      ['Coldest point of the day (core temperature minimum)', '#4a78c0'],
+      ['Growth hormone peak — cells repair and rebuild', '#4a78c0'],
+      ['Deepest sleep — memory consolidation', '#4a78c0'],
+      ['Brain master clock (SCN) at its quietest', '#4a78c0'],
+    ],
+    desc: 'SCN electrical activity is suppressed. Core temperature reaches its daily minimum. Growth hormone secretion peaks — driving protein synthesis and cellular repair in peripheral tissues.',
+  },
+  {
+    label: '4am to 8am · ZT4–8',
+    accent: '#70a840',
+    fill: '#0e1c10', highlight: '#162a18',
+    plain: 'The body\'s wake-up call. Cortisol surges, blood sugar rises, blood pressure climbs. This is the highest-risk window for heart attacks — but also when the liver opens its glucose gate for the day.',
+    events: [
+      ['Cortisol peak — the "wake-up hormone" surges', '#70a840'],
+      ['Liver releases glucose into the blood', '#70a840'],
+      ['Blood pressure rises sharply (heart attack risk peaks)', '#70a840'],
+      ['Brain transitions from sleep to alert mode', '#70a840'],
+    ],
+    desc: 'The cortisol awakening response (CAR) activates GRE elements in the liver to open the gluconeogenic gate. Blood pressure surges — the peak risk window for myocardial infarction and stroke.',
+  },
+  {
+    label: '8am to noon · ZT8–12',
+    accent: '#78c058',
+    fill: '#0e1c0e', highlight: '#16281a',
+    plain: 'Peak mental performance. Gut stem cells divide in this window. Lung airways are at their most open. This is when the body is most productive and when surgery outcomes tend to be best.',
+    events: [
+      ['Gut stem cells divide and replace gut lining', '#78c058'],
+      ['Best window for memory, focus, and reaction time', '#78c058'],
+      ['Lungs at their most open — asthma risk at its lowest', '#78c058'],
+      ['Body temperature climbing toward its daily peak', '#78c058'],
+    ],
+    desc: 'BMAL1 drives WNT signalling, gating intestinal stem-cell division. Cognitive performance peaks. Lung airway conductance is maximal — a circadian feature exploited in chronotherapy scheduling.',
+  },
+  {
+    label: 'Noon to 4pm · ZT12–16',
+    accent: '#d0a030',
+    fill: '#1a160a', highlight: '#261e10',
+    plain: 'The immune system is at its most active. This is when the body processes what you\'ve eaten and handles the day\'s metabolic load. Also when the molecular brake (REV-ERBα) is strongest — preparing the clock for evening.',
+    events: [
+      ['Immune cells (NK, T-cells) peak in the bloodstream', '#d0a030'],
+      ['Body processes post-meal glucose', '#d0a030'],
+      ['REV-ERBα at its strongest — braking the clock', '#d0a030'],
+      ['Temperature approaching its daily maximum', '#d0a030'],
+    ],
+    desc: 'REV-ERBα reaches its highest expression, maximally repressing Bmal1 transcription. Immune effector cells peak. Glucose tolerance decreases relative to morning.',
+  },
+  {
+    label: '4pm to 8pm · ZT16–20',
+    accent: '#e07840',
+    fill: '#1a1008', highlight: '#281812',
+    plain: 'The body\'s physical peak. Muscles are strongest, reaction times fastest, cardiovascular efficiency highest. The sleep hormone melatonin starts rising as light dims — your body clock begins closing down for the night.',
+    events: [
+      ['Peak physical strength, speed and coordination', '#e07840'],
+      ['Body temperature reaches its daily maximum (~5pm)', '#e07840'],
+      ['Melatonin begins to rise as darkness falls', '#e07840'],
+      ['Cell division gated again — WEE1 peaks', '#e07840'],
+    ],
+    desc: 'Peak physical performance window. Core body temperature peaks around ZT17. As light dims, the SCN releases melatonin from the pineal gland. WEE1 peaks, delaying cell division into late evening.',
+  },
+  {
+    label: '8pm to midnight · ZT20–24',
+    accent: '#7080c8',
+    fill: '#0e1022', highlight: '#161830',
+    plain: 'The body winds down. Melatonin fully opens the sleep gate. The liver switches from releasing glucose to storing it. The molecular clock completes its cycle and starts the process of resetting for the next day.',
+    events: [
+      ['Melatonin peaks — sleep gate fully open', '#7080c8'],
+      ['Liver switches to glycogen storage mode', '#7080c8'],
+      ['Molecular brake releases — BMAL1 begins to rise', '#7080c8'],
+      ['The 24-hour cycle prepares to repeat', '#7080c8'],
+    ],
+    desc: 'Full melatonin secretion suppresses SCN output and promotes sleep onset. REV-ERBα reaches its trough, releasing repression on Bmal1 — the key step that starts the next molecular cycle.',
+  },
+];
+
+// ── SVG CONSTANTS & HELPERS ───────────────────────────────────────────────────
+
+const NS = 'http://www.w3.org/2000/svg';
+const CX = 400, CY = 400, SCALE = 300;
+const R_SCN_RING  = 0.469 * SCALE;    // ~141
+const R_FIB       = 0.618 * SCALE;    // ~185
+const R_CIN       = 258;              // coupling inner
+const R_COUT      = 306;              // coupling outer
+const R_CLKIN     = 306;
+const R_CLKOUT    = 352;
+
+function r(lam) { return lam * SCALE; }
+function e(tag, attrs, text) {
+  const el = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+function circ(cx, cy, r, attrs) { return e('circle', { cx, cy, r, ...attrs }); }
+function ln(x1, y1, x2, y2, attrs) { return e('line', { x1, y1, x2, y2, ...attrs }); }
+function tx(x, y, content, attrs) { return e('text', { x, y, ...attrs }, content); }
+function polar(r, deg) {
+  const a = (deg - 90) * Math.PI / 180;
+  return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+}
+function arcSector(r1, r2, a1deg, a2deg, attrs) {
+  const a1 = (a1deg - 90) * Math.PI / 180, a2 = (a2deg - 90) * Math.PI / 180;
+  const lg = (a2deg - a1deg) > 180 ? 1 : 0;
+  const [x1o, y1o] = [CX + r2 * Math.cos(a1), CY + r2 * Math.sin(a1)];
+  const [x2o, y2o] = [CX + r2 * Math.cos(a2), CY + r2 * Math.sin(a2)];
+  const [x1i, y1i] = [CX + r1 * Math.cos(a2), CY + r1 * Math.sin(a2)];
+  const [x2i, y2i] = [CX + r1 * Math.cos(a1), CY + r1 * Math.sin(a1)];
+  return e('path', { d: `M${x1o} ${y1o} A${r2} ${r2} 0 ${lg} 1 ${x2o} ${y2o} L${x1i} ${y1i} A${r1} ${r1} 0 ${lg} 0 ${x2i} ${y2i}Z`, ...attrs });
+}
+
+// ── DEFS ──────────────────────────────────────────────────────────────────────
+
+const svg = document.getElementById('diagram');
+const defs = e('defs', {});
+
+function radGrad(id, stops) {
+  const g = e('radialGradient', { id, cx: '50%', cy: '50%', r: '50%' });
+  stops.forEach(([o, c]) => g.appendChild(e('stop', { offset: o, 'stop-color': c })));
+  return g;
+}
+defs.appendChild(radGrad('gBg',  [['0%','#0a1a3a'],['65%','#040c1c'],['100%','#010608']]));
+defs.appendChild(radGrad('gScn', [['0%','#1a3a7a'],['100%','#0c1e4a']]));
+
+const goldG = e('linearGradient', { id: 'gGold', x1: '0%', y1: '0%', x2: '100%', y2: '100%' });
+[['0%','#7a5808'],['35%','#c89820'],['65%','#e8c038'],['100%','#8a6810']].forEach(([o,c]) => goldG.appendChild(e('stop',{offset:o,'stop-color':c})));
+defs.appendChild(goldG);
+
+function mkGlow(id, blur) {
+  const f = e('filter', { id, x: '-30%', y: '-30%', width: '160%', height: '160%' });
+  const b = e('feGaussianBlur', { stdDeviation: String(blur), result: 'b' });
+  const m = e('feMerge', {});
+  m.appendChild(e('feMergeNode', { in: 'b' }));
+  m.appendChild(e('feMergeNode', { in: 'SourceGraphic' }));
+  f.appendChild(b); f.appendChild(m); return f;
+}
+defs.appendChild(mkGlow('gGlow', 4));
+defs.appendChild(mkGlow('gGlowSoft', 2.5));
+defs.appendChild(mkGlow('gGlowRing', 7));
+
+// Pulse animation for "hover me" affordance
+const pulse = e('animate', {
+  attributeName: 'r', values: '0;28;0',
+  dur: '2.5s', repeatCount: 'indefinite', begin: '1s'
+});
+const pulseEl = circ(...polar(r(0.797), 25), 0, { fill: 'none', stroke: '#c84020', 'stroke-width': '2', 'stroke-opacity': '0.6' });
+pulseEl.appendChild(pulse);
+
+// TextPath arcs for clock ring labels
+const tp1 = e('path', { id: 'tp1', d: `M ${CX-342},${CY} A 342 342 0 0 1 ${CX+342},${CY}`, fill: 'none' });
+const tp2 = e('path', { id: 'tp2', d: `M ${CX-336},${CY} A 336 336 0 0 0 ${CX+336},${CY}`, fill: 'none' });
+defs.appendChild(tp1); defs.appendChild(tp2);
+
+svg.appendChild(defs);
+
+// ── LAYER GROUPS ──────────────────────────────────────────────────────────────
+const [gBase, gSectors, gTissue, gFib, gCoup, gClock, gLabels, gSCN, gGauge, gNum] =
+  ['base','sectors','tissue','fib','coup','clock','labels','scn','gauge','num']
+  .map(id => { const g = e('g', { id }); svg.appendChild(g); return g; });
+
+// ── BACKGROUND ────────────────────────────────────────────────────────────────
+gBase.appendChild(circ(CX, CY, 420, { fill: 'url(#gBg)' }));
+
+// ── OUTER CLOCK RING ──────────────────────────────────────────────────────────
+gClock.appendChild(circ(CX, CY, R_CLKOUT, { fill: '#010608' }));
+gClock.appendChild(circ(CX, CY, R_CLKOUT, { fill: 'none', stroke: 'url(#gGold)', 'stroke-width': '46' }));
+gClock.appendChild(circ(CX, CY, R_CLKIN,  { fill: 'none', stroke: '#c8a030', 'stroke-width': '0.8', 'stroke-opacity': '0.55' }));
+gClock.appendChild(circ(CX, CY, R_CLKOUT, { fill: 'none', stroke: '#8a6010', 'stroke-width': '0.8', 'stroke-opacity': '0.6' }));
+
+// Tick marks
+for (let h = 0; h < 24; h++) {
+  const ang = h * 15, isMaj = h % 6 === 0;
+  const [x1, y1] = polar(316, ang), [x2, y2] = polar(isMaj ? 342 : 334, ang);
+  gClock.appendChild(ln(x1, y1, x2, y2, { stroke: isMaj ? '#f0d060' : '#a08028', 'stroke-width': isMaj ? '2.5' : '1.2', 'stroke-opacity': '0.9' }));
+}
+// Hour labels
+[{l:'12h',a:0},{l:'18h',a:90},{l:'24h',a:180},{l:'6h',a:270}].forEach(({l,a}) => {
+  const [x, y] = polar(350, a);
+  gClock.appendChild(tx(x, y, l, { fill: '#e8c840', 'font-size': '10.5', 'font-family': 'Georgia,serif', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-weight': 'bold' }));
+});
+// Curved text
+const cT1 = e('text', { fill: '#d4aa50', 'font-size': '10.5', 'font-family': 'Georgia,serif', 'letter-spacing': '0.16em', 'font-weight': 'bold' });
+const cTP1 = e('textPath', { href: '#tp1', startOffset: '25%', 'text-anchor': 'middle' });
+cTP1.textContent = '24-HOUR BODY CLOCK  ·  LIGHT ENTRAINMENT';
+cT1.appendChild(cTP1); gClock.appendChild(cT1);
+
+// Real-time hand on clock ring
+const circHand = ln(CX, CY, CX, CY - 290, { stroke: '#f0c840', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-opacity': '0.5' });
+gClock.appendChild(circHand);
+
+// ── CLOCK SECTOR HIGHLIGHTS (shown on hover) ──────────────────────────────────
+const sectorEls = CLOCK_SECTORS.map((sec, i) => {
+  const s = arcSector(R_CLKIN, R_CLKOUT, i * 60, (i + 1) * 60, { fill: sec.fill, 'pointer-events': 'none' });
+  gSectors.appendChild(s);
+  return s;
+});
+
+// Zone ① number marker on clock ring
+{
+  const [nx, ny] = polar((R_CLKIN + R_CLKOUT) / 2, 38);
+  gNum.appendChild(circ(nx, ny, 11, { fill: '#c8a030', 'fill-opacity': '0.85' }));
+  gNum.appendChild(tx(nx, ny, '1', { fill: '#030b19', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-weight': 'bold' }));
+}
+
+// ── COUPLING ZONE ─────────────────────────────────────────────────────────────
+gCoup.appendChild(circ(CX, CY, R_COUT, { fill: '#030b14' }));
+// Gear teeth
+for (let i = 0; i < 40; i++) {
+  const a1 = (i / 40) * 360, a2 = a1 + (360 / 40) * 0.46;
+  gCoup.appendChild(arcSector(R_CIN - 8, R_CIN, a1, a2, { fill: '#1a3660', stroke: '#263e72', 'stroke-width': '0.5' }));
+}
+for (let i = 0; i < 40; i++) {
+  const a1 = (i / 40) * 360 + (360 / 80), a2 = a1 + (360 / 40) * 0.46;
+  gCoup.appendChild(arcSector(R_COUT, R_COUT + 8, a1, a2, { fill: '#1a3660', stroke: '#263e72', 'stroke-width': '0.5' }));
+}
+
+// Zone ② number on coupling zone
+{
+  const [nx, ny] = polar((R_CIN + R_COUT) / 2, 155);
+  gNum.appendChild(circ(nx, ny, 11, { fill: '#4a7ab0', 'fill-opacity': '0.85' }));
+  gNum.appendChild(tx(nx, ny, '2', { fill: '#030b19', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-weight': 'bold' }));
+}
+
+// Pathway labels in coupling zone
+const R_PATH = (R_CIN + R_COUT) / 2;
+const pathLabelEls = {};
+PATHWAYS.forEach(pw => {
+  const [px, py] = polar(R_PATH, pw.angle);
+  const t1 = tx(px, py - 5, pw.label, { fill: '#8ab8e8', 'font-size': '8.5', 'font-family': 'inherit', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-weight': '600' });
+  const t2 = tx(px, py + 6, pw.sub,   { fill: '#3a5878', 'font-size': '7',   'font-family': 'inherit', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-style': 'italic' });
+  const [sx1, sy1] = polar(R_CIN - 2, pw.angle), [sx2, sy2] = polar(R_CIN - 12, pw.angle);
+  const spoke = ln(sx1, sy1, sx2, sy2, { stroke: '#2a4a78', 'stroke-width': '1', 'stroke-dasharray': '3 3' });
+  const hit = circ(px, py, 32, { fill: 'rgba(0,0,0,0.001)', stroke: 'none', style: 'cursor:pointer' });
+  hit.addEventListener('mouseenter', () => { if (!locked) { activePathway = pw.id; t1.setAttribute('fill','#d8e8ff'); t2.setAttribute('fill','#7a9ab8'); showPathway(pw); }});
+  hit.addEventListener('mouseleave', () => { if (!locked) { activePathway = null; t1.setAttribute('fill','#8ab8e8'); t2.setAttribute('fill','#3a5878'); hide(); }});
+  gCoup.append(spoke, t1, t2, hit);
+  pathLabelEls[pw.id] = { t1, t2 };
+});
+
+// ── TISSUE RINGS ──────────────────────────────────────────────────────────────
+gBase.appendChild(circ(CX, CY, R_CIN, { fill: '#040c1c' }));
+const tissueEls = {};
+TISSUES.forEach(t => {
+  const ri = r(t.lam);
+  const isDashed = ['brainstem','muscle'].includes(t.id);
+  const c = circ(CX, CY, ri, {
+    fill: 'none', stroke: t.color,
+    'stroke-width': isDashed ? '1.5' : '2.5',
+    'stroke-opacity': '0.85',
+    'stroke-dasharray': isDashed ? '5 4' : 'none',
+    filter: 'url(#gGlowSoft)'
+  });
+  gTissue.appendChild(c);
+  tissueEls[t.id] = c;
+});
+
+// Tissue labels
+const labelAngles = { scn: 270, brainstem: 155, muscle: 193, liver: 145, heart: 105, kidney: 65, lung: 25 };
+TISSUES.forEach(t => {
+  const ri = r(t.lam), ang = labelAngles[t.id];
+  const isDashed = ['brainstem','muscle'].includes(t.id);
+  const [lx, ly] = polar(ri, ang);
+  if (!isDashed) {
+    gLabels.appendChild(tx(lx, ly - 6, t.shortLabel, { fill: t.glow, 'font-size': '9', 'font-family': 'inherit', 'text-anchor': 'middle', 'font-weight': '600' }));
+    gLabels.appendChild(tx(lx, ly + 5, `|λ| = ${t.lam}`, { fill: t.color, 'font-size': '7.5', 'font-family': 'inherit', 'text-anchor': 'middle', 'font-style': 'italic' }));
+  } else {
+    gLabels.appendChild(tx(lx, ly, `${t.shortLabel}  ${t.lam}`, { fill: t.color, 'font-size': '7.5', 'font-family': 'inherit', 'text-anchor': 'middle', 'font-style': 'italic' }));
+  }
+});
+
+// Zone ③ on lung ring
+{
+  const [nx, ny] = polar(r(0.797), 350);
+  gNum.appendChild(circ(nx, ny, 11, { fill: '#c84020', 'fill-opacity': '0.85' }));
+  gNum.appendChild(tx(nx, ny, '3', { fill: '#fff', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-weight': 'bold' }));
+}
+
+// Pulse affordance ring on Lung
+gTissue.appendChild(pulseEl);
+
+// ── FIBONACCI BOUNDARY ────────────────────────────────────────────────────────
+gFib.appendChild(circ(CX, CY, R_FIB, { fill: 'none', stroke: '#e0b010', 'stroke-width': '12', 'stroke-opacity': '0.08' }));
+gFib.appendChild(circ(CX, CY, R_FIB, { fill: 'none', stroke: '#f0d030', 'stroke-width': '3', 'stroke-opacity': '0.18' }));
+gFib.appendChild(circ(CX, CY, R_FIB, { fill: 'none', stroke: '#ffd700', 'stroke-width': '2', 'stroke-dasharray': '8 5', 'stroke-opacity': '0.88', filter: 'url(#gGlow)' }));
+// Fibonacci label
+{
+  const [fx, fy] = polar(R_FIB, -38), [fx2, fy2] = polar(R_FIB + 24, -33);
+  gFib.appendChild(ln(fx, fy, fx2, fy2, { stroke: '#c8a830', 'stroke-width': '1', 'stroke-opacity': '0.6' }));
+  gFib.appendChild(tx(fx2, fy2 - 10, 'Clock gene sweet spot', { fill: '#f0d030', 'font-size': '9.5', 'font-family': 'inherit', 'text-anchor': 'middle', 'font-weight': '600' }));
+  gFib.appendChild(tx(fx2, fy2 + 1,  '1/φ ≈ 0.618', { fill: '#c8b040', 'font-size': '8.5', 'font-family': 'inherit', 'text-anchor': 'middle' }));
+}
+
+// ── SCN CORE ──────────────────────────────────────────────────────────────────
+gSCN.appendChild(circ(CX, CY, R_SCN_RING, { fill: 'url(#gScn)' }));
+gSCN.appendChild(circ(CX, CY, R_SCN_RING, { fill: 'none', stroke: '#5a90e0', 'stroke-width': '3', 'stroke-opacity': '0.88', filter: 'url(#gGlowSoft)' }));
+const waveEl = e('path', { fill: 'none', stroke: '#3a70d0', 'stroke-width': '1.5', 'stroke-opacity': '0.55' });
+gSCN.appendChild(waveEl);
+
+const handLong  = ln(CX, CY, CX, CY - R_SCN_RING * 0.84, { stroke: '#c8d8f8', 'stroke-width': '3.5', 'stroke-linecap': 'round', 'stroke-opacity': '0.88' });
+const handShort = ln(CX, CY, CX, CY - R_SCN_RING * 0.60, { stroke: '#c8d8f8', 'stroke-width': '5',   'stroke-linecap': 'round', 'stroke-opacity': '0.88' });
+const ghostL    = ln(CX, CY, CX, CY - 240, { stroke: '#3a5a90', 'stroke-width': '1.2', 'stroke-linecap': 'round', 'stroke-opacity': '0.16', 'stroke-dasharray': '4 7' });
+const ghostS    = ln(CX, CY, CX, CY - 195, { stroke: '#3a5a90', 'stroke-width': '0.8', 'stroke-linecap': 'round', 'stroke-opacity': '0.12', 'stroke-dasharray': '4 7' });
+gSCN.append(handLong, handShort, ghostL, ghostS);
+gSCN.appendChild(circ(CX, CY, 7, { fill: '#d0e0ff', stroke: '#6080c0', 'stroke-width': '1.5' }));
+
+gSCN.appendChild(tx(CX, CY - 20, 'SCN', { fill: '#88b8f0', 'font-size': '13', 'text-anchor': 'middle', 'font-weight': '700', 'letter-spacing': '0.12em' }));
+gSCN.appendChild(tx(CX, CY - 7,  'BMAL1 · CLOCK · PER · CRY', { fill: '#4a6a90', 'font-size': '7', 'text-anchor': 'middle', 'letter-spacing': '0.03em' }));
+gSCN.appendChild(tx(CX, CY + 7,  '|λ| = 0.469', { fill: '#6090d8', 'font-size': '10', 'text-anchor': 'middle', 'font-weight': 'bold' }));
+gSCN.appendChild(tx(CX, CY + 20, 'resets fastest', { fill: '#3a5070', 'font-size': '8', 'text-anchor': 'middle', 'font-style': 'italic' }));
+
+// Zone ④ on SCN
+{
+  const [nx, ny] = polar(R_SCN_RING - 16, 45);
+  gNum.appendChild(circ(nx, ny, 11, { fill: '#5a90e0', 'fill-opacity': '0.85' }));
+  gNum.appendChild(tx(nx, ny, '4', { fill: '#030b19', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-weight': 'bold' }));
+}
+
+// ── PAR(2) GAUGE (compact, top right) ────────────────────────────────────────
+const GX = 680, GY = 86, GR = 56;
+gGauge.appendChild(e('rect', { x: GX-GR-14, y: GY-GR-22, width: (GR+14)*2, height: GR+46, rx: '8', fill: '#05101e', stroke: '#1a2e48', 'stroke-width': '1' }));
+gGauge.appendChild(tx(GX, GY - GR - 12, 'EIGENVALUE |λ|', { fill: '#4a6888', 'font-size': '7', 'text-anchor': 'middle', 'letter-spacing': '0.14em', 'font-weight': 'bold' }));
+gGauge.appendChild(e('path', { d: `M ${GX-GR},${GY} A ${GR} ${GR} 0 0 1 ${GX+GR},${GY}`, fill: 'none', stroke: '#0d1e34', 'stroke-width': '12' }));
+[[0,.4,'#2a5088'],[.4,.58,'#287858'],[.58,.68,'#b89020'],[.68,.85,'#a84020'],[.85,1,'#681010']].forEach(([s,e2,c]) => {
+  const a1=s*Math.PI, a2=e2*Math.PI;
+  const x1=GX-GR*Math.cos(a1),y1=GY-GR*Math.sin(a1),x2=GX-GR*Math.cos(a2),y2=GY-GR*Math.sin(a2);
+  gGauge.appendChild(e('path',{d:`M ${x1} ${y1} A ${GR} ${GR} 0 ${e2-s>.5?1:0} 1 ${x2} ${y2}`,fill:'none',stroke:c,'stroke-width':'10','stroke-opacity':'0.85'}));
+});
+{
+  const a=.618*Math.PI, mx=GX-GR*Math.cos(a), my=GY-GR*Math.sin(a), mx2=GX-(GR-10)*Math.cos(a), my2=GY-(GR-10)*Math.sin(a);
+  gGauge.appendChild(ln(mx,my,mx2,my2,{stroke:'#ffd700','stroke-width':'2'}));
+  gGauge.appendChild(tx(GX-(GR+9)*Math.cos(a),GY-(GR+9)*Math.sin(a),'1/φ',{fill:'#ffd700','font-size':'7.5','text-anchor':'middle','dominant-baseline':'middle'}));
+}
+const needle = e('line', {x1:String(GX),y1:String(GY),x2:String(GX-GR*Math.cos(.618*Math.PI)),y2:String(GY-GR*Math.sin(.618*Math.PI)),stroke:'#f0d040','stroke-width':'2.5','stroke-linecap':'round'});
+gGauge.appendChild(needle);
+gGauge.appendChild(circ(GX,GY,4,{fill:'#e0d060',stroke:'#a09020','stroke-width':'1.2'}));
+gGauge.appendChild(tx(GX-GR-5,GY+11,'0',{fill:'#3a5070','font-size':'7.5','text-anchor':'middle'}));
+gGauge.appendChild(tx(GX+GR+5,GY+11,'1',{fill:'#3a5070','font-size':'7.5','text-anchor':'middle'}));
+const readout = tx(GX,GY+9,'0.618',{fill:'#f0d040','font-size':'9.5','text-anchor':'middle','font-weight':'bold'});
+gGauge.appendChild(readout);
+const readoutLabel = tx(GX,GY+21,'current tissue',{fill:'#3a5060','font-size':'7','text-anchor':'middle'});
+gGauge.appendChild(readoutLabel);
+
+// ── INTERACTION STATE ─────────────────────────────────────────────────────────
+
+const panel   = document.getElementById('infoPanel');
+const pEmpty  = document.getElementById('panelEmpty');
+const pContent= document.getElementById('panelContent');
+const pBadge  = document.getElementById('panelBadge');
+const pName   = document.getElementById('panelName');
+const pPlain  = document.getElementById('panelPlainText');
+const pEvents = document.getElementById('panelEvents');
+const sciBody = document.getElementById('scienceBody');
+const sciStats= document.getElementById('scienceStats');
+const ciNote  = document.getElementById('ciNote');
+const lockPill= document.getElementById('lockPill');
+const lockHint= document.getElementById('lockHint');
+
+let locked = false, activeTissue = null, activePathway = null, activeSector = null;
+let targetLam = 0.618, currentLam = 0.618, diseaseMode = false, fastMode = false;
+
+function show(badge, name, plain, events, desc, stats, ci, lamForNeedle, labelForGauge) {
+  pBadge.textContent = badge;
+  pName.textContent  = name;
+  pPlain.textContent = plain;
+  pEvents.innerHTML  = '';
+  (events || []).forEach(([txt, color]) => {
+    const row = document.createElement('div'); row.className = 'event-row';
+    row.innerHTML = `<div class="event-dot" style="background:${color}"></div><div class="event-text">${txt}</div>`;
+    pEvents.appendChild(row);
+  });
+  sciBody.textContent = desc || '';
+  sciStats.innerHTML  = '';
+  (stats || []).forEach(({ label, val, bar, bc }) => {
+    const d = document.createElement('div'); d.className = 'science-stat';
+    d.innerHTML = `<div class="science-stat-label">${label}</div><div class="science-stat-val">${val}</div>`
+      + (bar != null ? `<div class="science-bar"><div class="science-bar-fill" style="width:${bar*100}%;background:${bc||'#5080b0'}"></div></div>` : '');
+    sciStats.appendChild(d);
+  });
+  ciNote.textContent = ci || '';
+  pEmpty.classList.add('hidden');
+  pContent.classList.add('visible');
+  panel.classList.add('active');
+  if (lamForNeedle != null) {
+    targetLam = lamForNeedle;
+    readout.textContent = lamForNeedle.toFixed(3);
+    readoutLabel.textContent = labelForGauge || 'current tissue';
+  }
+}
+
+function hide() {
+  if (locked) return;
+  panel.classList.remove('active');
+  pContent.classList.remove('visible');
+  pEmpty.classList.remove('hidden');
+  targetLam = 0.618; readout.textContent = '0.618'; readoutLabel.textContent = 'Fibonacci boundary';
+}
+
+function highlightTissue(t) {
+  tissueEls[t.id].setAttribute('stroke-width', '4.5');
+  tissueEls[t.id].setAttribute('stroke', t.glow);
+  tissueEls[t.id].setAttribute('filter', 'url(#gGlowRing)');
+  Object.entries(tissueEls).forEach(([id, c]) => { if (id !== t.id) c.setAttribute('stroke-opacity', '0.2'); });
+}
+function clearTissue(t) {
+  const isDashed = ['brainstem','muscle'].includes(t.id);
+  tissueEls[t.id].setAttribute('stroke-width', isDashed ? '1.5' : '2.5');
+  tissueEls[t.id].setAttribute('stroke', t.color);
+  tissueEls[t.id].setAttribute('filter', 'url(#gGlowSoft)');
+  Object.values(tissueEls).forEach(c => c.setAttribute('stroke-opacity', '0.85'));
+}
+
+function showTissue(t) {
+  highlightTissue(t);
+  show(
+    'ORGAN CLOCK',
+    t.label,
+    t.plain,
+    null,
+    t.desc,
+    [
+      { label: '|λ| value', val: t.lam.toFixed(3), bar: t.lam, bc: t.color },
+      { label: 'Time const.', val: `${t.tau} h`, bar: t.tau/10, bc: t.color },
+      { label: 'vs. brain', val: `${(t.tau/2.6).toFixed(1)}× slower reset`, bar: null },
+      { label: 'Data from', val: t.dataset, bar: null },
+    ],
+    t.ci ? `95% confidence interval: [${t.ci[0]}, ${t.ci[1]}] — computed by gene-resampling bootstrap (5,000 iterations)` : '',
+    t.lam, t.shortLabel
+  );
+}
+function showPathway(pw) {
+  show('CHEMICAL MESSENGER', pw.label, pw.plain, null, pw.desc, null, '', null, null);
+}
+function showSector(sec) {
+  show('CIRCADIAN TIME WINDOW', sec.label, sec.plain, sec.events, sec.desc, null, '', null, sec.label.split('·')[0].trim());
+}
+
+// ── MOUSE DETECTION ON SVG ────────────────────────────────────────────────────
+svg.addEventListener('mousemove', ev => {
+  if (locked) return;
+  const rect = svg.getBoundingClientRect();
+  // viewBox is "-20 -20 840 840" so actual SVG coordinates = view * (840/width) - 20
+  const scale = 840 / rect.width;
+  const mx = (ev.clientX - rect.left) * scale - 20;
+  const my = (ev.clientY - rect.top)  * scale - 20;
+  const dist = Math.hypot(mx - CX, my - CY);
+
+  // Clock ring
+  if (dist >= R_CLKIN - 4 && dist <= R_CLKOUT + 8) {
+    if (activeTissue) { clearTissue(TISSUES.find(t=>t.id===activeTissue)); activeTissue=null; }
+    const angle = ((Math.atan2(my - CY, mx - CX) * 180 / Math.PI) + 90 + 360) % 360;
+    const idx = Math.min(Math.floor(angle / 60), 5);
+    if (activeSector !== idx) {
+      activeSector = idx;
+      sectorEls.forEach((s, i) => s.setAttribute('fill', i===idx ? CLOCK_SECTORS[i].highlight : CLOCK_SECTORS[i].fill));
+      showSector(CLOCK_SECTORS[idx]);
+    }
+    return;
+  }
+  // Left clock ring
+  if (activeSector !== null) {
+    sectorEls.forEach((s, i) => s.setAttribute('fill', CLOCK_SECTORS[i].fill));
+    activeSector = null;
+    if (!activeTissue && !activePathway) hide();
+  }
+
+  // Coupling zone — pathway hits handle themselves
+  if (dist >= R_CIN - 6 && dist <= R_COUT + 6) return;
+
+  // Tissue zone
+  if (dist >= 80 && dist < R_CIN) {
+    const nearest = TISSUES.reduce((b, t) => { const d = Math.abs(dist - r(t.lam)); return d < b.d ? {t,d} : b; }, { t: null, d: Infinity });
+    if (nearest.d < 22 && nearest.t) {
+      if (activeTissue !== nearest.t.id) {
+        if (activeTissue) clearTissue(TISSUES.find(t=>t.id===activeTissue));
+        activeTissue = nearest.t.id;
+        showTissue(nearest.t);
+      }
+    } else if (activeTissue) {
+      clearTissue(TISSUES.find(t=>t.id===activeTissue));
+      activeTissue = null;
+      if (!activePathway) hide();
+    }
+    return;
+  }
+
+  if (activeTissue) { clearTissue(TISSUES.find(t=>t.id===activeTissue)); activeTissue=null; if(!activePathway) hide(); }
+});
+
+svg.addEventListener('mouseleave', () => {
+  if (locked) return;
+  if (activeTissue) { clearTissue(TISSUES.find(t=>t.id===activeTissue)); activeTissue=null; }
+  sectorEls.forEach((s,i) => s.setAttribute('fill', CLOCK_SECTORS[i].fill));
+  activeSector=null;
+  if (!activePathway) hide();
+});
+
+// Click-to-lock
+svg.addEventListener('click', () => {
+  if (!pContent.classList.contains('visible')) return;
+  locked = !locked;
+  panel.classList.toggle('locked', locked);
+  lockPill.style.opacity = locked ? '1' : '0';
+  lockHint.textContent = locked ? 'Click the panel to unpin' : 'Click the diagram to pin this panel';
+});
+panel.addEventListener('click', () => {
+  if (!locked) return;
+  locked = false;
+  panel.classList.remove('locked');
+  lockPill.style.opacity = '0';
+  lockHint.textContent = 'Click the diagram to pin this panel';
+  if (!activeTissue && !activePathway && activeSector === null) hide();
+});
+
+// ── DISEASE MODE ──────────────────────────────────────────────────────────────
+function applyDisease(on) {
+  diseaseMode = on;
+  document.getElementById('btnDisease').textContent = on ? '🔴 Disease mode: ON' : '🔴 Disease mode';
+  document.getElementById('btnDisease').classList.toggle('danger-on', on);
+  TISSUES.forEach(t => {
+    const c = tissueEls[t.id];
+    if (on) { c.setAttribute('r', Math.min(r(t.id==='scn' ? t.lam+0.09 : t.lam+0.12), R_CIN-4)); c.setAttribute('stroke','#c03020'); }
+    else    { c.setAttribute('r', r(t.lam)); c.setAttribute('stroke', t.color); }
+  });
+}
+
+document.getElementById('btnDisease').addEventListener('click', () => applyDisease(!diseaseMode));
+document.getElementById('btnSpeed').addEventListener('click', () => {
+  fastMode = !fastMode;
+  document.getElementById('btnSpeed').textContent = fastMode ? '⏱ Demo speed (×360)' : '⏱ Real-time clock';
+  document.getElementById('btnSpeed').classList.toggle('on', true);
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  locked = false; panel.classList.remove('locked'); lockPill.style.opacity='0';
+  applyDisease(false);
+  if (activeTissue) { clearTissue(TISSUES.find(t=>t.id===activeTissue)); activeTissue=null; }
+  sectorEls.forEach((s,i) => s.setAttribute('fill',CLOCK_SECTORS[i].fill)); activeSector=null; activePathway=null;
+  Object.values(tissueEls).forEach(c=>c.setAttribute('stroke-opacity','0.85'));
+  hide();
+});
+
+// ── ANIMATION ─────────────────────────────────────────────────────────────────
+let waveOff = 0;
+function setHand(el, angleDeg, len) {
+  const a = (angleDeg - 90) * Math.PI / 180;
+  el.setAttribute('x2', String(CX + len * Math.cos(a)));
+  el.setAttribute('y2', String(CY + len * Math.sin(a)));
+}
+function drawWave(off) {
+  let d = '';
+  for (let i = 0; i <= 120; i++) {
+    const a = (i / 120) * 2 * Math.PI, rv = 58 + 16 * Math.sin(3*a + off);
+    d += (i===0?'M':'L') + ` ${CX+rv*Math.cos(a)} ${CY+rv*Math.sin(a)}`;
+  }
+  waveEl.setAttribute('d', d + 'Z');
+}
+function animate(ts) {
+  waveOff += 0.022;
+  drawWave(waveOff);
+
+  // Needle tween
+  currentLam += (targetLam - currentLam) * 0.10;
+  const na = currentLam * Math.PI;
+  needle.setAttribute('x2', String(GX - GR * Math.cos(na)));
+  needle.setAttribute('y2', String(GY - GR * Math.sin(na)));
+
+  // Clock hands
+  const now = new Date();
+  const sec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds() + now.getMilliseconds()/1000;
+  const circA  = fastMode ? ((ts/1000)%240)/240*360 : (sec/86400)*360;
+  const shortA = fastMode ? ((ts/1000)%10)/10*360   : ((sec%3600)/3600)*360;
+  setHand(handLong,  circA,  R_SCN_RING * 0.84);
+  setHand(handShort, shortA, R_SCN_RING * 0.60);
+  setHand(ghostL,    circA,  240);
+  setHand(ghostS,    shortA, 195);
+  setHand(circHand,  circA,  290);
+
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+})();
+</script>
+</body>
+</html>

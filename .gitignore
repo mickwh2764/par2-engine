@@ -1,0 +1,71 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Datasets (too large for GitHub, served from Replit storage)
+datasets/
+
+# Raw GEO downloads
+datasets/GSE*_raw/
+datasets/*_series_matrix.txt
+datasets/*_series_matrix.txt.gz
+datasets/GSE67305_RAW.tar
+
+# Attached assets (private working notes from chat sessions)
+attached_assets/
+
+# Generated analysis reports (reproducible from the platform)
+par2_results.json
+
+# Backup files
+backup/
+
+# Exported findings (reproducible)
+findings_export/
+
+# Push scripts (internal tooling)
+scripts/push-to-github.*
+
+# Temporary files
+/tmp/
+*.log
+
+# Large archive/zip files (reproducible from platform)
+PAR2_Discovery_Engine_Code_v1.0.zip
+PAR2-Discovery-Engine-v1.2-Zenodo.zip
+COMPREHENSIVE_ANALYSIS_REPORT.json
+
+# Internal Replit files
+.cache/
+.local/
+.upm/
+.config/
+.env
+.env.local
+generated-icon.png
+
+# Python virtual environment (Replit tooling)
+.pythonlibs/
+
+# Replit system files
+.replit
+replit.nix
+.breakpoints
+.deployignore
+
+# Package lock (regenerated on install)
+package-lock.json
+
+# Python build artifacts
+__pycache__/
+*.egg-info/
+*.pyc
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.out

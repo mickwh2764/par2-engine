@@ -1,0 +1,8 @@
+metric,value
+observed_clock_median,0.6466
+null_median_of_medians,0.4962
+null_mean_of_medians,0.4952
+p_value,0.0010
+n_clock_genes,16
+n_total_genes,20955
+n_permutations,10000

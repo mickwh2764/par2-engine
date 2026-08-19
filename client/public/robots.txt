@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /shared/
+
+Sitemap: https://par2discovery.com/sitemap.xml

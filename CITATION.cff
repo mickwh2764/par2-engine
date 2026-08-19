@@ -1,0 +1,96 @@
+cff-version: 1.2.0
+title: "PAR(2) Discovery Engine: Circadian Clock-Target Dynamics Analysis Platform"
+message: "If you use this software for academic/research purposes, please cite it using the metadata from this file. Commercial use requires a separate license - contact mickwh@msn.com."
+type: software
+license: LicenseRef-Dual-Academic-Commercial
+version: 2.0.0
+date-released: 2026-02-08
+doi: 10.5281/zenodo.18730681
+url: https://par2discovery.com
+repository-code: https://github.com/mickwh2764/par2-engine
+abstract: >-
+  A statistical platform for analyzing circadian clock-target gene dynamics 
+  using AR(2) autoregressive modeling. The eigenvalue modulus |lambda| 
+  quantifies temporal persistence in gene expression across 79 embedded 
+  datasets spanning 5 species (mouse, human, baboon, Arabidopsis, yeast) 
+  and ~125,000 unique genes. Features include: AR(2) eigenvalue profiling 
+  with 6-check edge-case diagnostics, multi-tissue Phase Portrait Explorer 
+  with BMAL1 coupling analysis (12 tissues, 636 gene-tissue tests), 
+  root-space geometry with GO/KEGG enrichment, drug target overlay 
+  (168 genes, 256 FDA drugs), literature validation against 59 curated 
+  circadian genes, genome-wide coupling scan with BH-FDR correction, 
+  ODE Model Zoo (5 models, 12/12 checks PASS), framework benchmarks 
+  against ARIMA/OU/State-Space, 11-analysis robustness suite, and 
+  custom CSV upload for real-time analysis.
+keywords:
+  - circadian rhythms
+  - chronobiology
+  - gene expression analysis
+  - AR(2) autoregressive model
+  - eigenvalue analysis
+  - time-series analysis
+  - bioinformatics
+  - chronotherapy
+  - cross-species validation
+  - BMAL1 coupling
+  - root-space geometry
+  - drug target analysis
+authors:
+  - name: "PAR(2) Discovery Engine Contributors"
+    affiliation: "Independent Research"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.18730681"
+    description: "Zenodo archive"
+  - type: other
+    value: "Pending UK Patent Application"
+    description: "PAR(2) methodology patent"
+references:
+  - type: article
+    title: "The circadian clock gene BMAL1 coordinates intestinal regeneration"
+    authors:
+      - family-names: Stokes
+        given-names: K
+    journal: "Genes & Development"
+    year: 2021
+    volume: 35
+    issue: 17-18
+    start: 1290
+    end: 1301
+    doi: "10.1101/gad.348530.121"
+    notes: "Primary dataset source (GSE157357)"
+  - type: article
+    title: "Harmonics of circadian gene transcription in mammals"
+    authors:
+      - family-names: Hughes
+        given-names: ME
+    journal: "PLoS Genetics"
+    year: 2009
+    volume: 5
+    issue: 4
+    doi: "10.1371/journal.pgen.1000442"
+    notes: "Hughes Circadian Atlas (GSE54650)"
+  - type: article
+    title: "A circadian gene expression atlas in mammals"
+    authors:
+      - family-names: Zhang
+        given-names: R
+    journal: "Proceedings of the National Academy of Sciences"
+    year: 2014
+    volume: 111
+    issue: 45
+    start: 16219
+    end: 16224
+    doi: "10.1073/pnas.1408886111"
+    notes: "Circadian atlas dataset (GSE54650)"
+  - type: article
+    title: "Diurnal transcriptome atlas of a primate across major neural and peripheral tissues"
+    authors:
+      - family-names: Mure
+        given-names: LS
+    journal: "Science"
+    year: 2018
+    volume: 359
+    issue: 6381
+    doi: "10.1126/science.aao0318"
+    notes: "Baboon circadian dataset (GSE98965)"

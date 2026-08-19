@@ -1,0 +1,22 @@
+ensembl_id,gene_symbol,description,verification_status,dataset_note
+ENSMUSG00000020038,Cry1,Cryptochrome 1,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.8138 claimed=0.814 diff=0.0002
+ENSMUSG00000055116,Arntl,Aryl hydrocarbon receptor nuclear translocator-like (Bmal1),VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.8103 claimed=0.810 diff=0.0003
+ENSMUSG00000059824,Dbp,D site albumin promoter binding protein,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.7819 claimed=0.782 diff=0.0001; ApcKO computed=0.9990 claimed=1.000 diff=0.001
+ENSMUSG00000020889,Nr1d1,Nuclear receptor subfamily 1 group D member 1 (Rev-erb alpha),VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.7427 claimed=0.743 diff=0.0003; consistent across all 4 conditions
+ENSMUSG00000019942,Cdk1,Cyclin-dependent kinase 1,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.7566 claimed=0.757 diff=0.0004
+ENSMUSG00000022346,Myc,Myelocytomatosis oncogene,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.7426 claimed=0.743 diff=0.0004
+ENSMUSG00000031016,Wee1,WEE 1 homolog (S. pombe),VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.6551 claimed=0.655 diff=0.0001
+ENSMUSG00000000142,Axin2,Axis inhibition protein 2 (conductin),VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.6365 claimed=0.637 diff=0.0005; ApcKO computed=0.9371 claimed=0.937 diff=0.0001
+ENSMUSG00000031004,Mki67,Marker of proliferation Ki-67,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.5282 claimed=0.528 diff=0.0002
+ENSMUSG00000023067,Cdkn1a,Cyclin-dependent kinase inhibitor 1A (p21),VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.5312 claimed=0.531 diff=0.0002
+ENSMUSG00000029238,Clock,Clock circadian regulator,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.4746 claimed=0.475 diff=0.0004
+ENSMUSG00000055866,Per2,Period circadian regulator 2,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.4867 claimed=0.487 diff=0.0003; consistent across all 4 conditions
+ENSMUSG00000020140,Lgr5,Leucine-rich repeat-containing G protein-coupled receptor 5,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.4742 claimed=0.474 diff=0.0002
+ENSMUSG00000020893,Per1,Period circadian regulator 1,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.2400 claimed=0.240 diff=0.0000
+ENSMUSG00000041431,Ccnb1,Cyclin B1,VERIFIED,Canonical GRCm38 (server/gene-categories.ts); WT computed=0.2062 claimed=0.206 diff=0.0002; consistent across all 4 conditions
+ENSMUSG00000028957,Per3,Period circadian regulator 3,ADDITIONAL,Canonical GRCm38 (server/gene-categories.ts); not in phi-timescale-buffering panel
+ENSMUSG00000021775,Nr1d2,Nuclear receptor subfamily 1 group D member 2 (Rev-erb beta),ADDITIONAL,Canonical GRCm38 (server/gene-categories.ts); not in phi-timescale-buffering panel
+ENSMUSG00000068742,Cry2,Cryptochrome 2,ADDITIONAL,Canonical GRCm38 (server/gene-categories.ts); not in phi-timescale-buffering panel
+ENSMUSG00000003949,Hlf,Hepatic leukemia factor (PAR bZIP),ADDITIONAL,Canonical GRCm38 (server/gene-categories.ts); not in phi-timescale-buffering panel
+ENSMUSG00000070348,Ccnd1,Cyclin D1,ADDITIONAL,Canonical GRCm38 (server/gene-categories.ts); not in phi-timescale-buffering panel
+ENSMUSG00000020647,Cdkn1b,Cyclin-dependent kinase inhibitor 1B (p27),ADDITIONAL,Canonical GRCm38; not in phi-timescale-buffering panel

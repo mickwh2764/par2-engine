@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "xIY8kWV9mw5RujBBd-5dy"
+uri = "file://paper-packages/paper-g-fibonacci-reply/Paper_G_Fibonacci_Reply.pdf"
+type = "pdf"
+title = "Paper G — Fibonacci Reply (Accepted Post-Revision)"
+description = "Accepted manuscript: A Time-Domain Analogue to Fibonacci Structure via Phase-Gated AR(2) Dynamics. 33 pages, incorporates all five reviewer-required changes."

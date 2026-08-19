@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>PAR(2) Discovery Engine — Circadian Clock-Target Dynamics</title>
+    <meta name="description" content="Statistical platform for AR(2) analysis of gene expression time series. Quantifies temporal persistence in circadian clock and target genes, validated across 4 species and 22 datasets. Includes genome-wide coupling scan, drug target overlay, ODE validation, and custom CSV upload." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://par2discovery.com/" />
+
+    <meta property="og:title" content="PAR(2) Discovery Engine — Circadian Clock-Target Dynamics" />
+    <meta property="og:description" content="Statistical platform for analyzing gene expression dynamics using AR(2) autoregressive modeling. Quantifies temporal persistence in circadian clock and target genes across 4 species and 22 datasets. Features genome-wide coupling scan, drug target overlay, ODE model zoo, and comprehensive robustness suite." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://par2discovery.com" />
+    <meta property="og:image" content="https://par2discovery.com/opengraph.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Michael_PAR2" />
+    <meta name="twitter:title" content="PAR(2) Discovery Engine — Circadian Clock-Target Dynamics" />
+    <meta name="twitter:description" content="Statistical platform for analyzing gene expression dynamics using AR(2) autoregressive modeling. Quantifies temporal persistence in circadian clock and target genes across 4 species and 22 datasets." />
+    <meta name="twitter:image" content="https://par2discovery.com/opengraph.jpg" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://par2discovery.com/#author",
+            "name": "Michael Whiteside",
+            "givenName": "Michael",
+            "familyName": "Whiteside",
+            "identifier": "https://orcid.org/0009-0000-0643-5791",
+            "url": "https://par2discovery.com/profile",
+            "mainEntityOfPage": { "@id": "https://par2discovery.com/#profile-page" },
+            "jobTitle": "Independent computational systems researcher",
+            "description": "Independent researcher developing open, reproducible methods for quantifying temporal persistence in biological time series using second-order autoregressive models, with applications in circadian biology, tissue renewal and cancer dynamics.",
+            "knowsAbout": [
+              "AR(2) eigenvalue modulus",
+              "Temporal persistence in gene expression",
+              "Circadian biology",
+              "Time-series analysis"
+            ],
+            "sameAs": [
+              "https://orcid.org/0009-0000-0643-5791",
+              "https://scholar.google.com/citations?user=hr5xiiQAAAAJ",
+              "https://github.com/mickwh2764",
+              "https://github.com/mickwh2764/par2-reproducibility",
+              "https://pypi.org/project/par2-circadian/",
+              "https://x.com/Michael_PAR2",
+              "https://doi.org/10.21203/rs.3.rs-9283100/v1",
+              "https://doi.org/10.21203/rs.3.rs-9214347/v1",
+              "https://doi.org/10.21203/rs.3.rs-9385465/v1"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://par2discovery.com/#website",
+            "url": "https://par2discovery.com",
+            "name": "PAR(2) Discovery Engine",
+            "description": "Statistical platform for AR(2) analysis of gene expression time series, quantifying temporal persistence in circadian clock and target genes.",
+            "author": { "@id": "https://par2discovery.com/#author" },
+            "publisher": { "@id": "https://par2discovery.com/#author" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "@id": "https://par2discovery.com/#package",
+            "name": "par2-circadian",
+            "description": "Python package for fitting AR(2) models to gene expression time series and computing the eigenvalue modulus as a measure of temporal persistence.",
+            "programmingLanguage": "Python",
+            "license": "https://opensource.org/licenses/MIT",
+            "codeRepository": "https://github.com/mickwh2764/par2discovery",
+            "url": "https://pypi.org/project/par2-circadian/",
+            "author": { "@id": "https://par2discovery.com/#author" }
+          },
+          {
+            "@type": "ProfilePage",
+            "@id": "https://par2discovery.com/#profile-page",
+            "url": "https://par2discovery.com/profile",
+            "name": "Michael Whiteside — researcher profile",
+            "mainEntity": { "@id": "https://par2discovery.com/#author" },
+            "isPartOf": { "@id": "https://par2discovery.com/#website" }
+          },
+          {
+            "@type": "Dataset",
+            "@id": "https://par2discovery.com/p53-tissue-landscape",
+            "name": "p53 Tissue Landscape: AR(2) Eigenvalue Analysis Across 12 Mouse Tissues",
+            "description": "AR(2) autoregressive eigenvalue analysis of p53 target genes and circadian clock genes across 12 healthy mouse tissues from GSE54650 (~21,000 genes per tissue). Quantifies basal p53 activity and circadian oscillation strength in a tissue-resolved manner.",
+            "url": "https://par2discovery.com/p53-tissue-landscape",
+            "identifier": "GSE54650",
+            "keywords": ["p53", "circadian clock", "AR(2)", "eigenvalue", "mouse tissues", "gene expression", "time series", "MDM2", "BMAL1", "oscillator"],
+            "license": "https://opensource.org/licenses/MIT",
+            "author": { "@id": "https://par2discovery.com/#author" },
+            "datePublished": "2026-08-15",
+            "variableMeasured": [
+              { "@type": "PropertyValue", "name": "AR(2) eigenvalue |λ|", "description": "Modulus of the dominant AR(2) autoregressive root, measuring oscillatory persistence" },
+              { "@type": "PropertyValue", "name": "Root type", "description": "Complex (oscillatory) or real (constitutive/monotone) AR(2) roots" }
+            ],
+            "measurementTechnique": "Autoregressive model order 2 (AR(2)) fitted to circadian time-course expression data",
+            "includedInDataCatalog": {
+              "@type": "DataCatalog",
+              "name": "NCBI Gene Expression Omnibus",
+              "url": "https://www.ncbi.nlm.nih.gov/geo/"
+            },
+            "spatialCoverage": "12 mouse tissues: Adrenal, Aorta, Brainstem, Brown Fat, Cerebellum, Heart, Hypothalamus, Kidney, Liver, Lung, Muscle, White Fat",
+            "isPartOf": { "@id": "https://par2discovery.com/#website" }
+          },
+          {
+            "@type": "ScholarlyArticle",
+            "@id": "https://par2discovery.com/oscillator-taxonomy",
+            "name": "Oscillator Taxonomy: AR(2) Classification of Biological Oscillators",
+            "description": "AR(2) autoregressive analysis classifying biological oscillators into three distinct classes: core circadian timekeepers (Per2, Cry1, Nr1d1, Clock), clock-entrained secondary oscillators (Wee1), and independent or conditionally coupled oscillators (Tp53, Mdm2, Nfkbia). Tissue coupling analysis across 12 mouse tissues from GSE54650.",
+            "url": "https://par2discovery.com/oscillator-taxonomy",
+            "keywords": ["circadian oscillator", "AR(2)", "autoregressive model", "eigenvalue", "tissue coupling", "Per2", "Cry1", "Wee1", "Tp53", "oscillator classification", "BMAL1"],
+            "license": "https://opensource.org/licenses/MIT",
+            "author": { "@id": "https://par2discovery.com/#author" },
+            "datePublished": "2026-08-15",
+            "about": [
+              { "@type": "DefinedTerm", "name": "Core Circadian Oscillators", "description": "Master timekeeping genes with high |λ| (0.75+) coupled in 9–12/12 tissues" },
+              { "@type": "DefinedTerm", "name": "Clock-Entrained Secondary Oscillators", "description": "Non-circadian oscillatory systems synchronized to the circadian clock" },
+              { "@type": "DefinedTerm", "name": "Independent Oscillators", "description": "Oscillatory systems running largely independently from the circadian clock" }
+            ],
+            "mentions": [
+              { "@type": "Gene", "name": "Per2" }, { "@type": "Gene", "name": "Cry1" },
+              { "@type": "Gene", "name": "Nr1d1" }, { "@type": "Gene", "name": "Clock" },
+              { "@type": "Gene", "name": "Wee1" }, { "@type": "Gene", "name": "Tp53" },
+              { "@type": "Gene", "name": "Mdm2" }, { "@type": "Gene", "name": "Nfkbia" }
+            ],
+            "isPartOf": { "@id": "https://par2discovery.com/#website" }
+          },
+          {
+            "@type": "Dataset",
+            "@id": "https://par2discovery.com/benchmark",
+            "name": "AR(2) vs JTK_Cycle vs Cosinor: Benchmark Comparison on Mouse and Baboon Liver",
+            "description": "Head-to-head benchmark comparing three oscillation-detection methods — AR(2) autoregressive eigenvalue analysis, JTK_Cycle, and Cosinor — across two species: mouse liver (GSE70499, Bmal1-WT, 24 timepoints, 20,955 genes) and baboon liver (GSE98965, Papio anubis, 12 timepoints, 14,824 genes). Demonstrates method orthogonality: within complex-root genes, Spearman(AR(2) λ, JTK) = +0.059 (mouse) and −0.203 (baboon), confirming AR(2) persistence and JTK rhythmicity share less than 5% of variance.",
+            "url": "https://par2discovery.com/benchmark",
+            "identifier": ["GSE70499", "GSE98965"],
+            "keywords": ["AR(2)", "JTK_Cycle", "Cosinor", "circadian", "benchmark", "eigenvalue", "mouse liver", "baboon liver", "oscillation detection", "method comparison"],
+            "license": "https://opensource.org/licenses/MIT",
+            "author": { "@id": "https://par2discovery.com/#author" },
+            "datePublished": "2026-08-15",
+            "variableMeasured": [
+              { "@type": "PropertyValue", "name": "AR(2) eigenvalue |λ|", "description": "Modulus of dominant AR(2) autoregressive root" },
+              { "@type": "PropertyValue", "name": "JTK_Cycle adjusted p-value", "description": "Benjamini-Hochberg adjusted p-value from JTK_Cycle rhythmicity test" },
+              { "@type": "PropertyValue", "name": "Cosinor amplitude", "description": "Fitted sinusoidal amplitude from Cosinor analysis" },
+              { "@type": "PropertyValue", "name": "Spearman rank correlation", "description": "Rank correlation between method scores" }
+            ],
+            "measurementTechnique": ["AR(2) autoregressive model", "JTK_Cycle", "Cosinor regression"],
+            "includedInDataCatalog": {
+              "@type": "DataCatalog",
+              "name": "NCBI Gene Expression Omnibus",
+              "url": "https://www.ncbi.nlm.nih.gov/geo/"
+            },
+            "isPartOf": { "@id": "https://par2discovery.com/#website" }
+          },
+          {
+            "@type": "Dataset",
+            "@id": "https://par2discovery.com/gene-eigenvalue-atlas",
+            "name": "Gene Eigenvalue Atlas: AR(2) Oscillatory Persistence Across Tissues and Organisms",
+            "description": "A curated atlas of AR(2) autoregressive eigenvalue measurements for circadian clock genes, p53 targets, housekeeping genes, and immune/metabolic genes across multiple mouse and human tissues. Each entry reports the oscillatory persistence |λ|, root type (complex/real), genome percentile rank, circadian phase, and disease delta (ApcKO vs WT organoids). Enables cross-tissue and cross-species comparison of oscillatory gene behaviour.",
+            "url": "https://par2discovery.com/gene-eigenvalue-atlas",
+            "keywords": ["gene eigenvalue", "AR(2)", "circadian clock", "oscillatory persistence", "BMAL1", "Per2", "cross-tissue", "mouse", "human", "eigenvalue atlas", "cancer organoid"],
+            "license": "https://opensource.org/licenses/MIT",
+            "author": { "@id": "https://par2discovery.com/#author" },
+            "datePublished": "2026-08-15",
+            "variableMeasured": [
+              { "@type": "PropertyValue", "name": "AR(2) eigenvalue |λ|", "description": "Modulus of the dominant AR(2) autoregressive root, measuring oscillatory persistence (0–1 stable, greater than 1 non-stationary)" },
+              { "@type": "PropertyValue", "name": "Root type", "description": "Complex roots indicate oscillation; real roots indicate monotone/constitutive expression" },
+              { "@type": "PropertyValue", "name": "Genome percentile", "description": "Percentile rank of |λ| among all ~20,000 genes in the same tissue" },
+              { "@type": "PropertyValue", "name": "Disease delta Δ|λ|", "description": "Change in eigenvalue between ApcKO and WT intestinal organoids" }
+            ],
+            "measurementTechnique": "Autoregressive model order 2 (AR(2)) fitted to circadian time-course RNA-seq data",
+            "includedInDataCatalog": {
+              "@type": "DataCatalog",
+              "name": "NCBI Gene Expression Omnibus",
+              "url": "https://www.ncbi.nlm.nih.gov/geo/"
+            },
+            "isPartOf": { "@id": "https://par2discovery.com/#website" }
+          }
+        ]
+      }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        var msg = (e.message || '') + ' ' + ((e.error && e.error.message) || '');
+        if (msg.indexOf('WebGL') !== -1 || msg.indexOf('webgl') !== -1 || msg.indexOf('THREE') !== -1) {
+          e.stopImmediatePropagation();
+          var overlay = document.querySelector('vite-plugin-runtime-error');
+          if (overlay) overlay.remove();
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function(e) {
+        var msg = (e.reason && e.reason.message) || String(e.reason || '');
+        if (msg.indexOf('WebGL') !== -1 || msg.indexOf('webgl') !== -1 || msg.indexOf('THREE') !== -1) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      }, true);
+    </script>
+    <!-- Early analytics beacon: fires before React loads, captures bounce visitors -->
+    <script>
+      (function() {
+        try {
+          if (!navigator.sendBeacon) return;
+          // Skip Replit workspace preview (self-traffic)
+          var ref = document.referrer || '';
+          if (ref.indexOf('__replco') !== -1 || ref.indexOf('riker.replit.dev') !== -1) return;
+          var tz = '';
+          try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e) {}
+          var lang = navigator.language || '';
+          var sid;
+          try {
+            sid = sessionStorage.getItem('par2_session_id');
+            if (!sid) {
+              sid = crypto.randomUUID();
+              sessionStorage.setItem('par2_session_id', sid);
+            }
+          } catch(e) { sid = 'nostorage'; }
+          var page = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+          var payload = JSON.stringify({
+            eventType: 'page_view',
+            page: page,
+            sessionId: sid,
+            referrer: ref || null,
+            timezone: tz || null,
+            language: lang || null,
+            earlyBeacon: true
+          });
+          navigator.sendBeacon('/api/app/event', new Blob([payload], { type: 'application/json' }));
+        } catch(e) {}
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

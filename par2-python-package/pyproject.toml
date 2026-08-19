@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "par2-circadian"
+version = "1.1.5"
+description = "AR(2) eigenvalue analysis for gene expression time series"
+readme = "README.md"
+license = "PolyForm-Noncommercial-1.0.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [
+    {name = "Michael Whiteside", email = "mickwh@msn.com"}
+]
+keywords = ["circadian", "gene-expression", "autoregressive", "eigenvalue", "time-series", "chronobiology"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "numpy>=1.20",
+    "pandas>=1.3",
+]
+
+[project.optional-dependencies]
+full = ["scipy>=1.7", "matplotlib>=3.4"]
+
+[project.scripts]
+par2 = "par2.cli:main"
+
+[project.urls]
+Homepage = "https://par2discovery.com"
+"Researcher-Profile" = "https://par2discovery.com/profile"
+Repository = "https://github.com/mickwh2764/par2discovery"
+Documentation = "https://github.com/mickwh2764/par2discovery#readme"
+
+[tool.setuptools.packages.find]
+include = ["par2*"]

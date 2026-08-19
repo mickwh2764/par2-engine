@@ -1,0 +1,55 @@
+{% set name = "par2-circadian" %}
+{% set version = "1.1.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/par2_circadian-{{ version }}.tar.gz
+  sha256: f9258c25bde6a6e57ac58ccc9fab0eb0f75a5758b54fc9aec66245114d784945
+
+build:
+  noarch: python
+  number: 0
+  script: {{ PYTHON }} -m pip install . -vv
+  entry_points:
+    - par2 = par2.cli:main
+
+requirements:
+  host:
+    - python >=3.8
+    - pip
+    - setuptools >=64
+    - wheel
+  run:
+    - python >=3.8
+    - numpy >=1.20
+    - pandas >=1.3
+
+test:
+  imports:
+    - par2
+    - par2.core
+    - par2.hierarchy
+    - par2.metrics
+    - par2.io
+  commands:
+    - par2 --help
+
+about:
+  home: https://github.com/mickwh2764/par2discovery
+  summary: AR(2) eigenvalue analysis for gene expression time series
+  description: |
+    Fits second-order autoregressive models to gene expression data and
+    computes the eigenvalue modulus |λ|, a single number that quantifies
+    temporal persistence. Discovers the three-layer hierarchy:
+    Clock > Target > Background.
+  license: PolyForm-Noncommercial-1.0.0
+  license_file: LICENSE
+  doc_url: https://github.com/mickwh2764/par2discovery#readme
+  dev_url: https://github.com/mickwh2764/par2discovery
+
+extra:
+  recipe-maintainers:
+    - mickwh2764

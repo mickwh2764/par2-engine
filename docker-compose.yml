@@ -1,0 +1,38 @@
+# PAR(2) Discovery Engine - Docker Compose
+# Usage: cp .env.example .env && edit .env && docker-compose up
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: par2-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-par2user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-par2discovery}
+    volumes:
+      - par2_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-par2user} -d $${POSTGRES_DB:-par2discovery}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  par2-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: par2-discovery-engine
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-par2user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-par2discovery}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  par2_pgdata:

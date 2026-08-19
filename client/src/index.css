@@ -1,0 +1,380 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Clean Academic Light Theme */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(215 25% 15%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(215 25% 15%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(215 25% 15%);
+
+  --color-primary: hsl(220 70% 50%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  --color-secondary: hsl(215 20% 95%);
+  --color-secondary-foreground: hsl(215 25% 25%);
+
+  --color-muted: hsl(215 20% 96%);
+  --color-muted-foreground: hsl(215 15% 45%);
+
+  --color-accent: hsl(220 70% 50%);
+  --color-accent-foreground: hsl(0 0% 100%);
+
+  --color-destructive: hsl(0 65% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(215 20% 88%);
+  --color-input: hsl(215 20% 92%);
+  --color-ring: hsl(220 70% 50%);
+
+  --color-chart-1: hsl(220 70% 50%);
+  --color-chart-2: hsl(200 70% 45%);
+  --color-chart-3: hsl(150 60% 40%);
+  --color-chart-4: hsl(260 55% 55%);
+  --color-chart-5: hsl(30 80% 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background: hsl(215 20% 97%);
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .header-btn {
+    @apply h-9 px-3 text-sm font-medium transition-all duration-150;
+  }
+  .header-btn-group {
+    @apply flex items-center rounded-lg border border-slate-200 bg-slate-50 p-1 gap-0.5;
+  }
+  .card-professional {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+}
+
+/*
+ * ============================================================
+ * LIGHT THEME OVERRIDES
+ * Uses [class*="..."] attribute selectors to catch ALL variants
+ * including opacity modifiers (/50, /80 etc.) in one rule.
+ * ============================================================
+ */
+
+/* --- DARK BACKGROUNDS → LIGHT --- */
+[class*="bg-slate-950"],
+[class*="bg-slate-900"],
+[class*="bg-gray-950"],
+[class*="bg-gray-900"],
+.bg-\[rgb\(15\,23\,42\)\] {
+  background-color: #ffffff !important;
+}
+
+[class*="bg-slate-800"],
+[class*="bg-gray-800"] {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0;
+}
+
+[class*="bg-slate-700"],
+[class*="bg-gray-700"] {
+  background-color: #f1f5f9 !important;
+}
+
+[class*="bg-slate-600"],
+[class*="bg-gray-600"] {
+  background-color: #e2e8f0 !important;
+}
+
+/* --- GRADIENT OVERRIDES → LIGHT --- */
+[class*="from-slate-950"], [class*="from-gray-950"] { --tw-gradient-from: #f8fafc !important; }
+[class*="from-slate-900"], [class*="from-gray-900"] { --tw-gradient-from: #f8fafc !important; }
+[class*="via-slate-900"], [class*="via-gray-900"] { --tw-gradient-via: #f1f5f9 !important; }
+[class*="to-slate-950"], [class*="to-gray-950"] { --tw-gradient-to: #f8fafc !important; }
+[class*="to-slate-900"], [class*="to-gray-900"] { --tw-gradient-to: #f8fafc !important; }
+
+[class*="bg-gradient-to-b"][class*="from-slate-950"],
+[class*="bg-gradient-to-b"][class*="from-gray-950"],
+[class*="bg-gradient-to-b"][class*="from-slate-900"],
+[class*="bg-gradient-to-b"][class*="from-gray-900"],
+[class*="bg-gradient-to-r"][class*="from-slate-950"],
+[class*="bg-gradient-to-r"][class*="from-gray-950"] {
+  background: #f9fafb !important;
+}
+
+[class*="bg-gradient-to-r"][class*="from-emerald-400"][class*="via-cyan-400"],
+[class*="bg-gradient-to-r"][class*="from-emerald-400"][class*="to-cyan-400"] {
+  --tw-gradient-from: #1e40af !important;
+  --tw-gradient-via: #4338ca !important;
+  --tw-gradient-to: #6d28d9 !important;
+}
+[class*="bg-gradient-to-r"][class*="from-emerald-600"][class*="to-cyan-600"] {
+  --tw-gradient-from: #2563eb !important;
+  --tw-gradient-to: #4f46e5 !important;
+}
+
+/* --- TEXT-WHITE → DARK (global default, with exceptions below) --- */
+.text-white {
+  color: #1e293b !important;
+}
+
+/* Exceptions: keep text white on colored/dark backgrounds */
+button .text-white,
+a .text-white,
+[class*="bg-primary"] .text-white,
+[class*="bg-blue-"] .text-white,
+[class*="bg-emerald-"] .text-white,
+[class*="bg-green-"] .text-white,
+[class*="bg-red-"] .text-white,
+[class*="bg-amber-"] .text-white,
+[class*="bg-violet-"] .text-white,
+[class*="bg-purple-"] .text-white,
+[class*="bg-cyan-"] .text-white,
+[class*="bg-teal-"] .text-white,
+[class*="bg-indigo-"] .text-white,
+[class*="bg-pink-"] .text-white,
+[class*="bg-rose-"] .text-white,
+[class*="bg-orange-"] .text-white,
+[class*="bg-yellow-"] .text-white,
+[class*="bg-sky-"] .text-white,
+[class*="bg-fuchsia-"] .text-white,
+[class*="bg-lime-"] .text-white,
+[class*="bg-destructive"] .text-white,
+[class*="from-emerald"] .text-white,
+[class*="from-cyan"] .text-white,
+[class*="from-purple"] .text-white,
+[class*="from-violet"] .text-white,
+[class*="from-red"] .text-white,
+[class*="from-blue"] .text-white,
+[class*="from-indigo"] .text-white,
+[class*="bg-gradient-to-br"] .text-white,
+[class*="bg-gradient-to-r"] .text-white,
+button.text-white,
+a.text-white,
+[class*="bg-primary"].text-white,
+[class*="bg-blue-"].text-white,
+[class*="bg-emerald-"].text-white,
+[class*="bg-green-"].text-white,
+[class*="bg-red-"].text-white,
+[class*="bg-amber-"].text-white,
+[class*="bg-violet-"].text-white,
+[class*="bg-purple-"].text-white,
+[class*="bg-cyan-"].text-white,
+[class*="bg-teal-"].text-white,
+[class*="bg-indigo-"].text-white,
+[class*="bg-pink-"].text-white,
+[class*="bg-rose-"].text-white,
+[class*="bg-orange-"].text-white,
+[class*="bg-yellow-"].text-white,
+[class*="bg-sky-"].text-white,
+[class*="bg-fuchsia-"].text-white,
+[class*="bg-lime-"].text-white,
+[class*="bg-destructive"].text-white,
+[class*="from-emerald"].text-white,
+[class*="from-cyan"].text-white,
+[class*="from-purple"].text-white,
+[class*="from-violet"].text-white,
+[class*="from-red"].text-white,
+[class*="from-blue"].text-white,
+[class*="from-indigo"].text-white,
+[class*="bg-gradient-to-br"].text-white,
+[class*="bg-gradient-to-r"].text-white {
+  color: #ffffff !important;
+}
+
+/* --- LIGHT TEXT → DARK TEXT (slate scale) --- */
+[class*="text-slate-100"] { color: #1e293b !important; }
+[class*="text-slate-200"] { color: #334155 !important; }
+[class*="text-slate-300"] { color: #475569 !important; }
+[class*="text-slate-400"] { color: #64748b !important; }
+[class*="text-slate-500"] { color: #64748b !important; }
+
+/* --- LIGHT TEXT → DARK TEXT (gray scale) --- */
+[class*="text-gray-100"] { color: #1f2937 !important; }
+[class*="text-gray-200"] { color: #374151 !important; }
+[class*="text-gray-300"] { color: #4b5563 !important; }
+[class*="text-gray-400"] { color: #6b7280 !important; }
+[class*="text-gray-500"] { color: #6b7280 !important; }
+
+/* --- LIGHT TEXT → DARK TEXT (zinc scale) --- */
+[class*="text-zinc-100"] { color: #27272a !important; }
+[class*="text-zinc-200"] { color: #3f3f46 !important; }
+[class*="text-zinc-300"] { color: #52525b !important; }
+[class*="text-zinc-400"] { color: #71717a !important; }
+
+/* --- LIGHT TEXT → DARK TEXT (neutral scale) --- */
+[class*="text-neutral-100"] { color: #262626 !important; }
+[class*="text-neutral-200"] { color: #404040 !important; }
+[class*="text-neutral-300"] { color: #525252 !important; }
+[class*="text-neutral-400"] { color: #737373 !important; }
+
+/* --- COLORED TEXT → DARKER VARIANTS --- */
+[class*="text-cyan-400"], [class*="text-cyan-300"] { color: #0369a1 !important; }
+[class*="text-emerald-400"], [class*="text-emerald-300"] { color: #047857 !important; }
+[class*="text-violet-400"], [class*="text-violet-300"] { color: #6d28d9 !important; }
+[class*="text-amber-400"], [class*="text-amber-300"] { color: #b45309 !important; }
+[class*="text-red-400"], [class*="text-red-300"] { color: #dc2626 !important; }
+[class*="text-blue-400"], [class*="text-blue-300"] { color: #2563eb !important; }
+[class*="text-purple-400"], [class*="text-purple-300"] { color: #7c3aed !important; }
+[class*="text-teal-400"], [class*="text-teal-300"] { color: #0f766e !important; }
+[class*="text-green-400"], [class*="text-green-300"] { color: #15803d !important; }
+[class*="text-yellow-400"], [class*="text-yellow-300"] { color: #a16207 !important; }
+[class*="text-indigo-400"], [class*="text-indigo-300"] { color: #4338ca !important; }
+[class*="text-pink-400"], [class*="text-pink-300"] { color: #be185d !important; }
+[class*="text-rose-400"], [class*="text-rose-300"] { color: #e11d48 !important; }
+[class*="text-orange-400"], [class*="text-orange-300"] { color: #c2410c !important; }
+[class*="text-lime-400"], [class*="text-lime-300"] { color: #4d7c0f !important; }
+[class*="text-sky-400"], [class*="text-sky-300"] { color: #0284c7 !important; }
+[class*="text-fuchsia-400"], [class*="text-fuchsia-300"] { color: #a21caf !important; }
+
+/* --- PLACEHOLDER TEXT --- */
+.placeholder\:text-gray-400::placeholder,
+.placeholder\:text-gray-500::placeholder,
+.placeholder\:text-slate-400::placeholder,
+.placeholder\:text-slate-500::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* --- DARK BORDERS → LIGHT --- */
+[class*="border-slate-600"], [class*="border-slate-700"], [class*="border-slate-800"] {
+  border-color: #e2e8f0 !important;
+}
+[class*="border-gray-600"], [class*="border-gray-700"], [class*="border-gray-800"] {
+  border-color: #e5e7eb !important;
+}
+[class*="border-cyan-500\\/"], [class*="border-cyan-400"] { border-color: #bae6fd !important; }
+[class*="border-emerald-500\\/"], [class*="border-emerald-600"] { border-color: #a7f3d0 !important; }
+[class*="border-violet-500\\/"] { border-color: #ddd6fe !important; }
+[class*="border-amber-500\\/"] { border-color: #fde68a !important; }
+[class*="border-red-500\\/"] { border-color: #fecaca !important; }
+[class*="border-blue-500\\/"] { border-color: #bfdbfe !important; }
+[class*="border-purple-500\\/"] { border-color: #e9d5ff !important; }
+[class*="border-teal-500\\/"] { border-color: #99f6e4 !important; }
+
+/* --- TINTED BACKGROUNDS (keep light tints) --- */
+[class*="bg-cyan-500\\/"] { background-color: #ecfeff !important; }
+[class*="bg-emerald-500\\/"] { background-color: #ecfdf5 !important; }
+[class*="bg-violet-500\\/"] { background-color: #f5f3ff !important; }
+[class*="bg-amber-500\\/"] { background-color: #fffbeb !important; }
+[class*="bg-red-500\\/"] { background-color: #fef2f2 !important; }
+[class*="bg-blue-500\\/"] { background-color: #eff6ff !important; }
+[class*="bg-purple-500\\/"] { background-color: #faf5ff !important; }
+[class*="bg-teal-500\\/"], [class*="bg-teal-950"], [class*="bg-teal-900"] { background-color: #f0fdfa !important; }
+[class*="bg-green-500\\/"] { background-color: #f0fdf4 !important; }
+[class*="bg-yellow-500\\/"] { background-color: #fefce8 !important; }
+[class*="bg-indigo-500\\/"], [class*="bg-indigo-900"] { background-color: #eef2ff !important; }
+[class*="bg-pink-500\\/"] { background-color: #fdf2f8 !important; }
+[class*="bg-orange-500\\/"] { background-color: #fff7ed !important; }
+[class*="bg-rose-500\\/"] { background-color: #fff1f2 !important; }
+[class*="bg-gray-500\\/"] { background-color: #f9fafb !important; }
+[class*="bg-slate-500\\/"] { background-color: #f8fafc !important; }
+
+/* --- RECHARTS TOOLTIP OVERRIDES --- */
+.recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+.recharts-default-tooltip .recharts-tooltip-label {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+.recharts-default-tooltip .recharts-tooltip-item {
+  color: #475569 !important;
+}
+.recharts-tooltip-wrapper {
+  z-index: 9999 !important;
+}
+
+/* --- SVG OVERRIDES --- */
+.fill-white { fill: #1e293b !important; }
+.stroke-white { stroke: #94a3b8 !important; }
+
+/* SVG inline fill overrides: light/white fills → readable dark */
+text[fill="#94a3b8"], text[fill="#94A3B8"],
+text[fill="#cbd5e1"], text[fill="#CBD5E1"],
+text[fill="#e2e8f0"], text[fill="#E2E8F0"],
+text[fill="#f1f5f9"], text[fill="#F1F5F9"],
+text[fill="#ffffff"], text[fill="#FFFFFF"],
+text[fill="white"],
+tspan[fill="#94a3b8"], tspan[fill="#94A3B8"],
+tspan[fill="#e2e8f0"], tspan[fill="#E2E8F0"],
+tspan[fill="#ffffff"], tspan[fill="#FFFFFF"] {
+  fill: #475569 !important;
+}
+
+/* SVG stroke white → visible dark */
+circle[stroke="#ffffff"], circle[stroke="#FFFFFF"],
+line[stroke="#ffffff"], line[stroke="#FFFFFF"],
+path[stroke="#ffffff"], path[stroke="#FFFFFF"],
+polyline[stroke="#ffffff"], polyline[stroke="#FFFFFF"],
+rect[stroke="#ffffff"], rect[stroke="#FFFFFF"] {
+  stroke: #334155 !important;
+}
+
+/* --- DIVIDERS, RINGS, SHADOWS --- */
+[class*="divide-gray-7"] > :not([hidden]) ~ :not([hidden]),
+[class*="divide-gray-8"] > :not([hidden]) ~ :not([hidden]),
+[class*="divide-slate-7"] > :not([hidden]) ~ :not([hidden]),
+[class*="divide-slate-8"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+[class*="ring-gray-7"], [class*="ring-gray-8"],
+[class*="ring-slate-7"], [class*="ring-slate-8"] {
+  --tw-ring-color: #e2e8f0 !important;
+}
+
+[class*="shadow-teal-900"], [class*="shadow-slate-900"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: none !important;
+}
+
+/* --- HOVER TEXT OVERRIDE (ensure hover states also readable) --- */
+[class*="hover\\:text-white"]:hover {
+  color: #1e293b !important;
+}
+[class*="hover\\:text-slate-100"]:hover,
+[class*="hover\\:text-slate-200"]:hover,
+[class*="hover\\:text-gray-100"]:hover,
+[class*="hover\\:text-gray-200"]:hover {
+  color: #334155 !important;
+}
+
+/* Hover exceptions for colored backgrounds */
+button[class*="hover\\:text-white"]:hover,
+[class*="bg-primary"][class*="hover\\:text-white"]:hover,
+[class*="bg-blue-"][class*="hover\\:text-white"]:hover,
+[class*="bg-emerald-"][class*="hover\\:text-white"]:hover,
+[class*="bg-red-"][class*="hover\\:text-white"]:hover {
+  color: #ffffff !important;
+}

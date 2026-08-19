@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAR(2) Circadian Helix — Gene Expression Springs</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #030d1a; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08);
+      --text: #e2e8f0; --muted: #64748b; --accent: #facc15;
+    }
+    body { background: var(--bg); color: var(--text); font-family: Georgia, serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    header h1 { font-size: 1.0rem; font-weight: 400; color: #f1f5f9; }
+    header .sub { font-size: 0.68rem; color: var(--muted); font-family: 'Courier New', monospace; }
+    .hdr-right { margin-left: auto; display: flex; gap: 7px; }
+    .pill {
+      font-size: 0.65rem; font-family: 'Courier New', monospace; letter-spacing: 0.06em;
+      padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--surface); color: #94a3b8; cursor: pointer; transition: all 0.18s;
+    }
+    .pill:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+    .pill.on { border-color: rgba(250,204,21,0.4); color: var(--accent); background: rgba(250,204,21,0.07); }
+    .pill.view { border-color: rgba(96,165,250,0.3); color: #60a5fa; background: rgba(96,165,250,0.06); }
+
+    .stage { flex: 1; display: flex; min-height: 0; }
+
+    /* ── Canvas area ── */
+    #threeWrap { flex: 1; position: relative; min-width: 0; overflow: hidden; }
+    #threeWrap canvas { display: block; width: 100% !important; height: 100% !important; }
+
+    /* Canvas overlay annotations */
+    #annotations {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .ann-label {
+      position: absolute; transform: translate(-50%, -50%);
+      font-size: 0.65rem; font-family: 'Courier New', monospace;
+      white-space: nowrap; pointer-events: none;
+    }
+
+    /* Axis label */
+    #axisLabel {
+      position: absolute; bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem; color: #334155; font-family: 'Courier New', monospace;
+      letter-spacing: 0.1em; pointer-events: none;
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 280px; flex-shrink: 0; border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sec { padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sec-lbl {
+      font-size: 0.61rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); font-family: 'Courier New', monospace; margin-bottom: 10px;
+    }
+    .dir-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .dir-btn {
+      flex: 1; padding: 5px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface); color: #64748b; font-size: 0.68rem;
+      font-family: 'Courier New', monospace; cursor: pointer; text-align: center;
+      transition: all 0.18s;
+    }
+    .dir-btn.sel { border-color: rgba(96,165,250,0.5); color: #60a5fa; background: rgba(96,165,250,0.08); }
+    .shift-row { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+    .shift-num { font-size: 1.35rem; font-family: 'Courier New', monospace; min-width: 50px; text-align: center; }
+    .shift-num .unit { font-size: 0.67rem; color: var(--muted); display: block; margin-top: -4px; }
+    .adj { display: flex; flex-direction: column; gap: 3px; }
+    .adj-btn {
+      width: 26px; height: 20px; border-radius: 3px; border: 1px solid var(--border);
+      background: var(--surface); color: #94a3b8; cursor: pointer; font-size: 0.72rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .adj-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .sim-btn {
+      width: 100%; padding: 8px; border-radius: 7px;
+      border: 1px solid rgba(250,204,21,0.3); background: rgba(250,204,21,0.07);
+      color: var(--accent); font-size: 0.74rem; font-family: 'Courier New', monospace;
+      letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;
+    }
+    .sim-btn:hover { background: rgba(250,204,21,0.14); }
+    .sim-btn.running { border-color: rgba(248,113,113,0.4); color: #f87171; background: rgba(248,113,113,0.07); }
+    .day-ctr { margin-top: 11px; padding: 8px 11px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); display: none; }
+    .day-ctr.vis { display: block; }
+    .day-num { font-size: 1.3rem; font-family: 'Courier New', monospace; }
+    .day-sub { font-size: 0.61rem; color: var(--muted); font-family: 'Courier New', monospace; margin-top: 1px; }
+    .day-track { margin-top: 6px; height: 2px; background: rgba(255,255,255,0.07); border-radius: 1px; }
+    .day-fill { height: 2px; background: linear-gradient(90deg,#60a5fa,#facc15); border-radius: 1px; width: 0%; transition: width 0.12s; }
+
+    .realign-sec { padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; display: none; }
+    .realign-sec.vis { display: block; }
+    .chip-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+    .chip { display: flex; align-items: center; gap: 7px; padding: 4px 9px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border); transition: all 0.3s; }
+    .chip.done { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
+    .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .chip-name { font-size: 0.7rem; color: #cbd5e1; flex: 1; font-family: 'Courier New', monospace; }
+    .chip-st { font-size: 0.64rem; font-family: 'Courier New', monospace; color: var(--muted); }
+    .chip.done .chip-st { color: #34d399; }
+
+    .info-col { flex: 1; padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 11px; }
+    .info-box { padding: 11px 13px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); min-height: 80px; }
+    .info-box h3 { font-size: 0.87rem; font-weight: 400; margin-bottom: 7px; }
+    .mrow { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .mk { font-size: 0.65rem; color: var(--muted); font-family: 'Courier New', monospace; }
+    .mv { font-size: 0.72rem; font-family: 'Courier New', monospace; }
+    .plain { font-size: 0.71rem; color: #94a3b8; line-height: 1.55; margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); }
+    .hint { font-size: 0.69rem; color: var(--muted); font-style: italic; line-height: 1.55; }
+    .exp-box { padding: 11px 13px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); font-size: 0.69rem; color: #64748b; line-height: 1.65; }
+
+    /* Tooltip */
+    #tip {
+      position: fixed; pointer-events: none; display: none;
+      background: rgba(3,13,26,0.93); border: 1px solid var(--border);
+      border-radius: 5px; padding: 6px 10px; font-size: 0.69rem;
+      font-family: 'Courier New', monospace; color: var(--text); white-space: nowrap;
+      backdrop-filter: blur(4px); z-index: 99;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Circadian Helix</h1>
+  <span class="sub">gene expression as a spring in time · PAR(2) · GSE54650</span>
+  <div class="hdr-right">
+    <button class="pill view" id="btnFront">End-on view</button>
+    <button class="pill view" id="btnSide">Side view</button>
+    <button class="pill on" id="btnAnim">Pause</button>
+    <button class="pill" id="btnReset">Reset</button>
+  </div>
+</header>
+
+<div class="stage">
+  <div id="threeWrap">
+    <div id="annotations"></div>
+    <div id="axisLabel">← past · · · · · time axis · · · · · future →</div>
+  </div>
+
+  <aside>
+    <div class="sec">
+      <div class="sec-lbl">Jet lag simulator</div>
+      <div class="dir-row">
+        <button class="dir-btn sel" id="btnEast">▶ Eastward</button>
+        <button class="dir-btn" id="btnWest">◀ Westward</button>
+      </div>
+      <div class="shift-row">
+        <div class="adj">
+          <button class="adj-btn" id="btnUp">▲</button>
+          <button class="adj-btn" id="btnDn">▼</button>
+        </div>
+        <div class="shift-num">
+          <span id="shiftVal">+8</span>
+          <span class="unit">hours</span>
+        </div>
+        <div style="font-size:0.64rem;color:#475569;line-height:1.5;flex:1">e.g. London<br>→ Tokyo</div>
+      </div>
+      <button class="sim-btn" id="btnSim">▶ Twist springs (simulate jet lag)</button>
+      <div class="day-ctr" id="dayCtr">
+        <div class="day-num" id="dayNum">Day 0.0</div>
+        <div class="day-sub">of 14 simulated days</div>
+        <div class="day-track"><div class="day-fill" id="dayFill"></div></div>
+      </div>
+    </div>
+
+    <div class="realign-sec" id="realignSec">
+      <div class="sec-lbl">Spring re-alignment</div>
+      <div class="chip-list" id="chipList"></div>
+    </div>
+
+    <div class="info-col">
+      <div>
+        <div class="sec-lbl" style="margin-bottom:7px">Selected tissue</div>
+        <div class="info-box" id="infoBox">
+          <p class="hint">Hover any spring to see its eigenvalue and what its τ_c means for re-entrainment. Click to lock the selection.</p>
+        </div>
+      </div>
+      <div class="exp-box">
+        <strong style="color:#94a3b8;font-size:0.67rem;letter-spacing:0.07em">HOW TO READ THIS</strong><br><br>
+        Each spring is one tissue. <strong style="color:#e2e8f0">Spring radius</strong> = |λ| = how strongly that tissue's transcriptome oscillates circadianly. Larger spring = higher temporal persistence.<br><br>
+        The Z-axis is time — one full revolution = 24 h. All springs normally turn together in phase (a synchronised bundle).<br><br>
+        <strong style="color:#e2e8f0">Jet lag</strong> twists the outer springs relative to the inner ones. The SCN (innermost, <span style="color:#facc15">yellow</span>) re-aligns first. Your <span style="color:#f472b6">lung</span> is still misaligned days later — the largest spring untwists slowest.<br><br>
+        Drag to rotate · scroll to zoom · use End-on view to see the twist directly.
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div id="tip"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─── TISSUE DATA ─────────────────────────────────────────────────────────────
+const TISSUES = [
+  { id:'hyp', name:'Hypothalamus', lambda:0.4691, tau_c:2.64,  hexColor:'#facc15', color:0xfacc15, helixR:0.38,
+    plain:'The master pacemaker. Fastest to untwist — re-aligns in ~1 day.' },
+  { id:'mus', name:'Sk. Muscle',   lambda:0.6219, tau_c:4.21,  hexColor:'#fb923c', color:0xfb923c, helixR:0.72,
+    plain:'Muscle clocks respond to movement and feeding. Untwists in ~1.5 days.' },
+  { id:'liv', name:'Liver',        lambda:0.6413, tau_c:4.49,  hexColor:'#c084fc', color:0xc084fc, helixR:1.05,
+    plain:'Strongly meal-driven. Night-shift eating detaches liver from SCN within days.' },
+  { id:'adr', name:'Adrenal',      lambda:0.6821, tau_c:5.22,  hexColor:'#34d399', color:0x34d399, helixR:1.45,
+    plain:'Cortisol relay. Mid-hierarchy — both receiver and broadcaster of time signals.' },
+  { id:'kid', name:'Kidney',       lambda:0.7377, tau_c:6.58,  hexColor:'#60a5fa', color:0x60a5fa, helixR:1.95,
+    plain:'Blood pressure follows the kidney clock. Chronic misalignment raises cardiovascular risk.' },
+  { id:'lun', name:'Lung',         lambda:0.7966, tau_c:8.82,  hexColor:'#f472b6', color:0xf472b6, helixR:2.60,
+    plain:'Highest |λ|. Largest spring, slowest to untwist — still misaligned 10–14 days post-travel.' },
+];
+
+// ─── SIMULATION CONSTANTS ────────────────────────────────────────────────────
+const TURNS      = 8;     // visible circadian cycles
+const Z_PER_TURN = 3.0;   // world-units per 24h turn
+const TUBE_R     = 0.065; // tube radius
+const TOTAL_Z    = TURNS * Z_PER_TURN;
+const POINTS_PER_TURN = 60;
+const TOTAL_PTS  = TURNS * POINTS_PER_TURN;
+
+const SIM_DAYS   = 14;
+const SECS_PER_DAY = 3;
+const REALIGN_RAD  = 0.08;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+TISSUES.forEach(t => { t.twistRad = 0; t.realigned = false; t.realignDay = null; });
+
+let simRunning = false, simDay = 0, lastSimTs = null, rafSimId = null;
+let shiftHours = 8, eastward = true, animating = true, lockedIdx = -1;
+
+// ─── THREE.JS SETUP ──────────────────────────────────────────────────────────
+const wrap  = document.getElementById('threeWrap');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x030d1a, 1);
+wrap.appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.target.set(0, 0, 0);
+
+// ─── RESIZE ──────────────────────────────────────────────────────────────────
+function onResize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ─── LIGHTING ────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 10, 8);
+scene.add(dirLight);
+const backLight = new THREE.DirectionalLight(0x8888ff, 0.3);
+backLight.position.set(-5, -3, -8);
+scene.add(backLight);
+
+// ─── AXIS LINE ───────────────────────────────────────────────────────────────
+{
+  const axGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, -TOTAL_Z/2 - 1),
+    new THREE.Vector3(0, 0,  TOTAL_Z/2 + 1),
+  ]);
+  const axMat = new THREE.LineBasicMaterial({ color: 0x1e3a5f, opacity: 0.5, transparent: true });
+  scene.add(new THREE.Line(axGeo, axMat));
+}
+
+// ─── HELIX GEOMETRY ──────────────────────────────────────────────────────────
+function makeHelixPoints(helixR, twistRad = 0) {
+  const pts = [];
+  for (let i = 0; i <= TOTAL_PTS; i++) {
+    const t = i / TOTAL_PTS;
+    const angle = twistRad + t * TURNS * Math.PI * 2;
+    const z = t * TOTAL_Z - TOTAL_Z / 2;
+    pts.push(new THREE.Vector3(helixR * Math.cos(angle), helixR * Math.sin(angle), z));
+  }
+  return pts;
+}
+
+function makeHelixMesh(tis, twistRad = 0) {
+  const pts   = makeHelixPoints(tis.helixR, twistRad);
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const geo   = new THREE.TubeGeometry(curve, TOTAL_PTS, TUBE_R, 8, false);
+  const mat   = new THREE.MeshPhongMaterial({
+    color: tis.color,
+    emissive: tis.color,
+    emissiveIntensity: 0.25,
+    shininess: 80,
+    transparent: true,
+    opacity: 0.88,
+  });
+  const mesh  = new THREE.Mesh(geo, mat);
+  mesh.userData.tissueId = tis.id;
+  return mesh;
+}
+
+// Build all helices; store in groups for rotation
+const helixGroups = {};
+TISSUES.forEach(tis => {
+  const group = new THREE.Group();
+  group.userData.tissueId = tis.id;
+  const mesh = makeHelixMesh(tis, 0);
+  group.add(mesh);
+  scene.add(group);
+  helixGroups[tis.id] = { group, mesh };
+  tis._mesh = mesh;
+});
+
+// Add end-cap rings (circles at Z start and Z end showing cross-section)
+function makeEndRing(helixR, color, z) {
+  const geo = new THREE.RingGeometry(helixR - TUBE_R * 1.5, helixR + TUBE_R * 1.5, 32);
+  const mat = new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.18 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.z = z;
+  return mesh;
+}
+const ringGroup = new THREE.Group();
+TISSUES.forEach(tis => {
+  ringGroup.add(makeEndRing(tis.helixR, tis.color, -TOTAL_Z/2));
+  ringGroup.add(makeEndRing(tis.helixR, tis.color,  TOTAL_Z/2));
+});
+scene.add(ringGroup);
+
+// ─── CAMERA POSITIONS ────────────────────────────────────────────────────────
+const CAM_OBLIQUE = new THREE.Vector3(-8,  5, 14);
+// End-on: camera sits on +Z axis → looks straight down the time axis → helices appear as concentric circles
+const CAM_FRONT   = new THREE.Vector3(0, 0.01, 30);
+// Top-down: camera above → shows the full length of the time axis
+const CAM_SIDE    = new THREE.Vector3(0, 18, 0.01);
+
+function animateCameraTo(target, duration = 800) {
+  const start  = camera.position.clone();
+  const t0     = performance.now();
+  function step(ts) {
+    const alpha = Math.min((ts - t0) / duration, 1);
+    const ease  = 1 - Math.pow(1 - alpha, 3);
+    camera.position.lerpVectors(start, target, ease);
+    controls.update();
+    if (alpha < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Default oblique view
+camera.position.copy(CAM_OBLIQUE);
+camera.lookAt(0, 0, 0);
+controls.update();
+
+document.getElementById('btnFront').onclick = () => animateCameraTo(CAM_FRONT);
+document.getElementById('btnSide').onclick  = () => animateCameraTo(CAM_SIDE);
+
+// ─── SLOW ROTATION of the whole scene (makes it feel alive) ──────────────────
+const sceneGroup = new THREE.Group();
+// Move helix groups and ring group into sceneGroup
+TISSUES.forEach(tis => {
+  scene.remove(helixGroups[tis.id].group);
+  sceneGroup.add(helixGroups[tis.id].group);
+});
+scene.remove(ringGroup);
+sceneGroup.add(ringGroup);
+scene.add(sceneGroup);
+
+// ─── RAYCASTING (hover) ──────────────────────────────────────────────────────
+const raycaster = new THREE.Raycaster();
+raycaster.params.Line = { threshold: 0.1 };
+const mouse = new THREE.Vector2(-9999, -9999);
+const tip = document.getElementById('tip');
+let hoveredId = null;
+
+const allMeshes = TISSUES.map(t => t._mesh);
+
+wrap.addEventListener('mousemove', e => {
+  const rect = wrap.getBoundingClientRect();
+  mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+  tip.style.left = (e.clientX + 14) + 'px';
+  tip.style.top  = (e.clientY - 8)  + 'px';
+});
+
+wrap.addEventListener('mouseleave', () => {
+  mouse.set(-9999, -9999);
+  tip.style.display = 'none';
+  hoveredId = null;
+  if (lockedIdx < 0) clearInfo();
+  resetHighlights();
+});
+
+wrap.addEventListener('click', () => {
+  if (hoveredId !== null) {
+    const idx = TISSUES.findIndex(t => t.id === hoveredId);
+    lockedIdx = (lockedIdx === idx) ? -1 : idx;
+    if (lockedIdx >= 0) updateInfo(lockedIdx);
+    else clearInfo();
+  } else {
+    lockedIdx = -1; clearInfo();
+  }
+});
+
+function resetHighlights() {
+  TISSUES.forEach(t => {
+    if (t._mesh) t._mesh.material.emissiveIntensity = 0.25;
+  });
+}
+
+// ─── ANNOTATION LABELS ───────────────────────────────────────────────────────
+const annDiv = document.getElementById('annotations');
+const labelEls = {};
+TISSUES.forEach(tis => {
+  const div = document.createElement('div');
+  div.className = 'ann-label';
+  div.id = 'ann-' + tis.id;
+  div.innerHTML = `<span style="color:${tis.hexColor}">${tis.name}</span>`;
+  annDiv.appendChild(div);
+  labelEls[tis.id] = div;
+});
+
+function updateAnnotations() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  TISSUES.forEach(tis => {
+    // Project the start of the helix (at z = -TOTAL_Z/2, angle = 0)
+    const angle = tis.twistRad;
+    const worldPt = new THREE.Vector3(
+      tis.helixR * Math.cos(angle),
+      tis.helixR * Math.sin(angle),
+      TOTAL_Z / 2 + 0.5
+    );
+    worldPt.applyMatrix4(sceneGroup.matrixWorld);
+    const projected = worldPt.project(camera);
+    const px = (projected.x  * 0.5 + 0.5) * w;
+    const py = (-projected.y * 0.5 + 0.5) * h;
+    const el = labelEls[tis.id];
+    if (projected.z < 1) {
+      el.style.display = 'block';
+      el.style.left = px + 'px';
+      el.style.top  = py + 'px';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+// ─── INFO PANEL ──────────────────────────────────────────────────────────────
+function updateInfo(idx) {
+  const t = TISSUES[idx];
+  const twistH = (Math.abs(t.twistRad) / (Math.PI * 2) * 24).toFixed(1);
+  const jlLine = simRunning && !t.realigned
+    ? `<div class="mrow"><span class="mk">twist remaining</span><span class="mv" style="color:#f87171">${twistH}h</span></div>`
+    : t.realigned
+    ? `<div class="mrow"><span class="mk">re-aligned</span><span class="mv" style="color:#34d399">Day ${t.realignDay.toFixed(1)}</span></div>`
+    : '';
+  document.getElementById('infoBox').innerHTML = `
+    <h3 style="color:${t.hexColor}">${t.name}</h3>
+    <div class="mrow"><span class="mk">|λ| eigenvalue</span><span class="mv">${t.lambda.toFixed(4)}</span></div>
+    <div class="mrow"><span class="mk">τ_c</span><span class="mv">${t.tau_c.toFixed(2)} h</span></div>
+    <div class="mrow"><span class="mk">spring radius</span><span class="mv">${t.helixR.toFixed(2)} units</span></div>
+    ${jlLine}
+    <div class="plain">${t.plain}</div>
+  `;
+}
+function clearInfo() {
+  document.getElementById('infoBox').innerHTML =
+    '<p class="hint">Hover any spring to see its eigenvalue and what its τ_c means for re-entrainment. Click to lock the selection.</p>';
+}
+
+// ─── RENDER LOOP ─────────────────────────────────────────────────────────────
+let lastRenderTs = null;
+
+function render(ts) {
+  requestAnimationFrame(render);
+  const dt = lastRenderTs ? Math.min((ts - lastRenderTs) / 1000, 0.05) : 0.016;
+  lastRenderTs = ts;
+
+  // Slow ambient rotation when not jet-lag-simulating
+  if (animating && !simRunning) {
+    sceneGroup.rotation.z += dt * 0.06;
+  }
+
+  controls.update();
+
+  // Raycast hover
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(allMeshes);
+  if (hits.length > 0) {
+    const id = hits[0].object.userData.tissueId;
+    if (id !== hoveredId) {
+      resetHighlights();
+      hoveredId = id;
+      hits[0].object.material.emissiveIntensity = 0.7;
+      tip.style.display = 'block';
+      const idx = TISSUES.findIndex(t => t.id === id);
+      const ti  = TISSUES[idx];
+      tip.textContent = `${ti.name}  |λ|=${ti.lambda.toFixed(4)}  τc=${ti.tau_c.toFixed(2)}h`;
+      if (lockedIdx < 0) updateInfo(idx);
+    }
+  } else if (hoveredId !== null) {
+    resetHighlights();
+    hoveredId = null;
+    tip.style.display = 'none';
+    if (lockedIdx < 0) clearInfo();
+  }
+
+  updateAnnotations();
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(render);
+
+// ─── JET LAG PHYSICS ─────────────────────────────────────────────────────────
+function rebuildHelix(tis) {
+  const { group } = helixGroups[tis.id];
+  // Remove old mesh
+  while (group.children.length > 0) group.remove(group.children[0]);
+  const mesh = makeHelixMesh(tis, tis.twistRad);
+  mesh.userData.tissueId = tis.id;
+  group.add(mesh);
+  tis._mesh = mesh;
+  // Update allMeshes reference
+  const idx = TISSUES.findIndex(t => t.id === tis.id);
+  allMeshes[idx] = mesh;
+}
+
+function simFrame(ts) {
+  if (!simRunning) return;
+  rafSimId = requestAnimationFrame(simFrame);
+
+  const dt = lastSimTs ? Math.min((ts - lastSimTs) / 1000, 0.05) : 0.016;
+  lastSimTs = ts;
+
+  simDay += dt / SECS_PER_DAY;
+  if (simDay >= SIM_DAYS) { simDay = SIM_DAYS; endSim(); }
+
+  TISSUES.forEach((tis, idx) => {
+    if (tis.realigned) return;
+    // Rate of untwisting: 2π/τ_c radians per simulated day
+    const ratePerSec = (Math.PI * 2 / tis.tau_c) / SECS_PER_DAY;
+    const step = ratePerSec * dt;
+    if (Math.abs(tis.twistRad) <= step + REALIGN_RAD) {
+      tis.twistRad = 0;
+      tis.realigned = true;
+      tis.realignDay = simDay;
+      updateChip(tis);
+    } else {
+      tis.twistRad -= Math.sign(tis.twistRad) * step;
+    }
+    rebuildHelix(tis);
+    if (lockedIdx === idx) updateInfo(idx);
+  });
+
+  updateDayUI();
+}
+
+function startSim() {
+  const shiftRad = (shiftHours / 24) * Math.PI * 2 * (eastward ? 1 : -1);
+  TISSUES.forEach(tis => {
+    tis.twistRad   = shiftRad;
+    tis.realigned  = false;
+    tis.realignDay = null;
+    rebuildHelix(tis);
+  });
+  simDay = 0; simRunning = true; lastSimTs = null;
+  buildChips();
+  document.getElementById('realignSec').classList.add('vis');
+  document.getElementById('dayCtr').classList.add('vis');
+  document.getElementById('btnSim').textContent = '■ Stop simulation';
+  document.getElementById('btnSim').classList.add('running');
+  // Snap to front view so the twist is immediately visible
+  animateCameraTo(CAM_FRONT);
+  rafSimId = requestAnimationFrame(simFrame);
+}
+
+function endSim() {
+  simRunning = false;
+  if (rafSimId) { cancelAnimationFrame(rafSimId); rafSimId = null; }
+  document.getElementById('btnSim').textContent = '▶ Twist springs (simulate jet lag)';
+  document.getElementById('btnSim').classList.remove('running');
+}
+
+function resetAll() {
+  endSim();
+  TISSUES.forEach(tis => {
+    tis.twistRad = 0; tis.realigned = false; tis.realignDay = null;
+    rebuildHelix(tis);
+  });
+  simDay = 0;
+  document.getElementById('realignSec').classList.remove('vis');
+  document.getElementById('dayCtr').classList.remove('vis');
+  updateDayUI();
+  lockedIdx = -1; clearInfo();
+  animateCameraTo(CAM_OBLIQUE);
+}
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+function updateDayUI() {
+  document.getElementById('dayNum').textContent = 'Day ' + simDay.toFixed(1);
+  document.getElementById('dayFill').style.width = Math.min(simDay / SIM_DAYS * 100, 100).toFixed(1) + '%';
+}
+
+function buildChips() {
+  const list = document.getElementById('chipList');
+  list.innerHTML = '';
+  TISSUES.forEach(tis => {
+    const div = document.createElement('div');
+    div.className = 'chip'; div.id = 'chip-' + tis.id;
+    div.innerHTML = `<div class="chip-dot" style="background:${tis.hexColor}"></div>
+      <span class="chip-name">${tis.name}</span>
+      <span class="chip-st" id="cs-${tis.id}">twisted</span>`;
+    list.appendChild(div);
+  });
+}
+function updateChip(tis) {
+  const chip = document.getElementById('chip-' + tis.id);
+  const cs   = document.getElementById('cs-'   + tis.id);
+  if (!chip||!cs) return;
+  chip.classList.add('done');
+  cs.textContent = 'Day ' + tis.realignDay.toFixed(1) + ' ✓';
+}
+
+let shiftNum = 8;
+function updateShift() {
+  shiftHours = shiftNum;
+  document.getElementById('shiftVal').textContent = (eastward?'+':'−') + shiftNum;
+}
+
+document.getElementById('btnUp').onclick = () => { shiftNum = Math.min(12, shiftNum+1); updateShift(); };
+document.getElementById('btnDn').onclick = () => { shiftNum = Math.max(1,  shiftNum-1); updateShift(); };
+document.getElementById('btnEast').onclick = () => { eastward=true;  document.getElementById('btnEast').classList.add('sel'); document.getElementById('btnWest').classList.remove('sel'); updateShift(); };
+document.getElementById('btnWest').onclick = () => { eastward=false; document.getElementById('btnWest').classList.add('sel'); document.getElementById('btnEast').classList.remove('sel'); updateShift(); };
+document.getElementById('btnSim').onclick  = () => { simRunning ? endSim() : startSim(); };
+document.getElementById('btnAnim').onclick = function() {
+  animating = !animating;
+  this.textContent = animating ? 'Pause' : 'Play';
+  this.classList.toggle('on', animating);
+};
+document.getElementById('btnReset').onclick = resetAll;
+</script>
+</body>
+</html>

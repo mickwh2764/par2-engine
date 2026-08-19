@@ -1,0 +1,6 @@
+# Dependencies for check-glds247-pdf-values.sh — GLDS-247 canonical IFN-γ values in PDF
+# Format: Display label|relative/path/to/file
+# This file is read automatically by scripts/master-audit.sh
+# Update this file when the script's dataset requirements change.
+
+GLDS-247  (PDF canonical values) — submission PDF|manuscripts/future_iterations/glds247_spaceflight_colon_submission.pdf

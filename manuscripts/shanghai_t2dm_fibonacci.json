@@ -1,0 +1,159 @@
+{
+  "metadata": {
+    "source": "ShanghaiT2DM Dataset (Zhao et al. 2023)",
+    "subjectCount": 10,
+    "method": "AR(2) Stability + Fibonacci Proximity"
+  },
+  "summary": {
+    "avgGlucose": 157.41052542367404,
+    "avgCV": 28.035473899327677,
+    "avgModulus": 0.739864044419282,
+    "avgFibonacciProximity": 53.384466451483874,
+    "stableCount": 10,
+    "r_modulus_mean_glucose": -0.61,
+    "p_modulus_mean_glucose": 0.061,
+    "r_modulus_cv": -0.68,
+    "p_modulus_cv": 0.030,
+    "note": "r_modulus_cv, p_modulus_cv, r_modulus_mean_glucose, and p_modulus_mean_glucose are from the original analysis pipeline operating on raw 5-minute CGM time-series (Zhao et al. 2023). They cannot be independently re-derived from the per-subject summary rows in this JSON because the CV% and mean glucose used in the original analysis were computed across all raw readings (multi-day clinical values), whereas the per-subject fields here are derived from stored summary statistics. These values are stored as authoritative archived results and locked by the regression test.",
+    "provenance": {
+      "r_modulus_mean_glucose": {
+        "archived_value": -0.61,
+        "archived_p": 0.061,
+        "pipeline": "Pearson r between per-subject AR(2) eigenvalue modulus |λ| and multi-day clinical mean glucose. Mean glucose was computed as the arithmetic mean of all raw 5-minute CGM readings across all recording days for each subject (not the per-window mean stored in the results rows). AR(2) fit used mean-centred OLS on 24-hour windows (288 samples/day); see fit_ar2_demeaned() in manuscripts/scripts/cgm_shanghai_ar2_analysis.py. p-value is two-tailed via regularised incomplete beta; see pearson() in manuscripts/scripts/colas2019_cgm_ar2_analysis.py.",
+        "raw_data_source": "Zhao Z et al. ShanghaiT2DM: A Shanghai-based continuous glucose monitoring dataset for type 2 diabetes mellitus. Scientific Data 10, 175 (2023). https://doi.org/10.1038/s41597-023-02084-6",
+        "why_not_reproducible_from_rows": "The per-subject meanGlucose fields in the results array are per-window means averaged over days; the original pipeline used the mean of every raw 5-minute reading, which differs due to within-subject variation in recording-day length and non-uniform window coverage. Computing Pearson r from the stored rows gives approximately -0.447 (negative direction preserved; magnitude diverges due to the aggregation difference).",
+        "provenance_document": "manuscripts/scripts/shanghai_t2dm_cgm_pipeline_provenance.md"
+      },
+      "r_modulus_cv": {
+        "archived_value": -0.68,
+        "archived_p": 0.030,
+        "pipeline": "Pearson r between per-subject AR(2) eigenvalue modulus |λ| and multi-day clinical CV%. CV% computed as (SD / mean) × 100 across all raw 5-minute readings for each subject. Same AR(2) fitting and p-value method as r_modulus_mean_glucose above.",
+        "raw_data_source": "Zhao Z et al. ShanghaiT2DM. Scientific Data 10, 175 (2023). https://doi.org/10.1038/s41597-023-02084-6",
+        "why_not_reproducible_from_rows": "Per-subject cvGlucose in the results array is the CV of per-window means, not the CV of all raw 5-minute readings. The multi-day clinical CV% captured in the original analysis differs numerically.",
+        "provenance_document": "manuscripts/scripts/shanghai_t2dm_cgm_pipeline_provenance.md"
+      }
+    }
+  },
+  "results": [
+    {
+      "subject": "Shanghai_2000_0",
+      "meanGlucose": 119.49699248120301,
+      "cvGlucose": 29.656718024689464,
+      "beta1": 1.0646030234907577,
+      "beta2": -0.689870744160622,
+      "modulus": 0.8305845797753664,
+      "isStable": true,
+      "fibonacciProximity": 92.78901053606741,
+      "fibonacciClass": "Fibonacci-like",
+      "clinicalStatus": "Pre-diabetic"
+    },
+    {
+      "subject": "Shanghai_2001_1",
+      "meanGlucose": 143.70828976848395,
+      "cvGlucose": 25.001876353322288,
+      "beta1": 1.2318147755680684,
+      "beta2": -0.799724496553921,
+      "modulus": 0.8942731666297055,
+      "isStable": true,
+      "fibonacciProximity": 92.52095077828434,
+      "fibonacciClass": "Fibonacci-like",
+      "clinicalStatus": "Well-controlled T2D"
+    },
+    {
+      "subject": "Shanghai_2003_0",
+      "meanGlucose": 204.2123076923077,
+      "cvGlucose": 19.08520437962553,
+      "beta1": 1.1518569003432333,
+      "beta2": -0.5732281483498696,
+      "modulus": 0.7571183185935139,
+      "isStable": true,
+      "fibonacciProximity": 67.61181789843303,
+      "fibonacciClass": "Near-Fibonacci",
+      "clinicalStatus": "Uncontrolled T2D"
+    },
+    {
+      "subject": "Shanghai_2002_0",
+      "meanGlucose": 171.84761904761905,
+      "cvGlucose": 33.08363586621104,
+      "beta1": 1.1888864201894052,
+      "beta2": -0.5879106725294676,
+      "modulus": 0.76675333225847,
+      "isStable": true,
+      "fibonacciProximity": 66.751801332077,
+      "fibonacciClass": "Near-Fibonacci",
+      "clinicalStatus": "Uncontrolled T2D"
+    },
+    {
+      "subject": "Shanghai_2008_0",
+      "meanGlucose": 139.52870544090058,
+      "cvGlucose": 37.45148402058669,
+      "beta1": 1.1834397431844117,
+      "beta2": -0.5533304731584252,
+      "modulus": 0.7438618642990278,
+      "isStable": true,
+      "fibonacciProximity": 59.40905142740161,
+      "fibonacciClass": "Near-Fibonacci",
+      "clinicalStatus": "Highly variable T2D"
+    },
+    {
+      "subject": "Shanghai_2001_0",
+      "meanGlucose": 141.4468619246862,
+      "cvGlucose": 20.825677533083066,
+      "beta1": 1.2247445762477582,
+      "beta2": -0.5193983686331194,
+      "modulus": 0.7206929780656388,
+      "isStable": true,
+      "fibonacciProximity": 47.712717158662,
+      "fibonacciClass": "Non-Fibonacci",
+      "clinicalStatus": "Well-controlled T2D"
+    },
+    {
+      "subject": "Shanghai_2005_0",
+      "meanGlucose": 147.54790159189582,
+      "cvGlucose": 30.75770308929937,
+      "beta1": 1.283515005177648,
+      "beta2": -0.5432239701352728,
+      "modulus": 0.7370372922283328,
+      "isStable": true,
+      "fibonacciProximity": 47.48581503449165,
+      "fibonacciClass": "Non-Fibonacci",
+      "clinicalStatus": "Well-controlled T2D"
+    },
+    {
+      "subject": "Shanghai_2007_0",
+      "meanGlucose": 165.2361010830325,
+      "cvGlucose": 36.54617685310179,
+      "beta1": 0.9780733428255672,
+      "beta2": -0.3859373969146844,
+      "modulus": 0.621238599021893,
+      "isStable": true,
+      "fibonacciProximity": 40.00179751207554,
+      "fibonacciClass": "Non-Fibonacci",
+      "clinicalStatus": "Highly variable T2D"
+    },
+    {
+      "subject": "Shanghai_2004_0",
+      "meanGlucose": 183.2429752066116,
+      "cvGlucose": 28.278915515466302,
+      "beta1": 1.2073171060224581,
+      "beta2": -0.371524430877173,
+      "modulus": 0.6095280394511585,
+      "isStable": true,
+      "fibonacciProximity": 19.561702837346175,
+      "fibonacciClass": "Non-Fibonacci",
+      "clinicalStatus": "Uncontrolled T2D"
+    },
+    {
+      "subject": "Shanghai_2006_0",
+      "meanGlucose": 157.8375,
+      "cvGlucose": 19.667347357891227,
+      "beta1": 0.7297127820206697,
+      "beta2": -0.008725800275129814,
+      "modulus": 0.7175522738697135,
+      "isStable": true,
+      "fibonacciProximity": 2.4207198904449768e-34,
+      "fibonacciClass": "Non-Fibonacci",
+      "clinicalStatus": "Uncontrolled T2D"
+    }
+  ]
+}

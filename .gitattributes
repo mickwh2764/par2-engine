@@ -1,0 +1,11 @@
+# Binary files
+*.pdf binary
+*.png binary
+*.jpg binary
+*.zip binary
+*.gz binary
+*.csv linguist-detectable=false
+*.json linguist-detectable=false
+
+# Lock file
+package-lock.json linguist-generated=true

@@ -1,0 +1,40 @@
+{
+  "title": "PAR(2) Discovery Engine: A Reproducible Methods Platform for Temporal Persistence Analysis of Gene Expression Time Series",
+  "description": "Full source code, embedded datasets, reproducibility package, and pre-computed results for the PAR(2) Discovery Engine. The platform implements AR(2) eigenvalue modulus analysis of gene expression time series and reproducibly identifies a Clock > target > housekeeping temporal persistence hierarchy across 22 datasets in 5 species.\n\nKey components:\n- AR(2) eigenvalue solver (TypeScript and Python)\n- Atlas computation pipeline across 12 mouse tissues\n- Phase-gated AR(2) analysis for circadian interaction detection\n- Standalone reproducibility package with 3 embedded datasets\n- Pre-computed results: 20,955-gene eigenvalue atlas, permutation null distribution, nine-category statistical tests\n\nThe PAR(2) Discovery Engine web platform is accessible at https://par2discovery.com.",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "other-open",
+  "creators": [
+    {
+      "name": "Whiteside, Michael",
+      "affiliation": "Independent Researcher, United Kingdom",
+      "orcid": "0009-0000-0643-5791"
+    }
+  ],
+  "keywords": [
+    "AR(2) model",
+    "eigenvalue analysis",
+    "gene expression",
+    "circadian biology",
+    "temporal persistence",
+    "bioinformatics",
+    "reproducibility",
+    "PAR(2)",
+    "autoregressive model",
+    "TypeScript",
+    "Python"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/mickwh2764/par2-engine",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://par2discovery.com",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    }
+  ],
+  "notes": "Pending UK patent application GB2518973.9 covers the PAR(2) mathematical framework. Academic/non-commercial use is free with citation. Commercial use requires a separate licence (contact mickwh@msn.com)."
+}

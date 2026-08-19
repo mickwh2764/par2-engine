@@ -1,0 +1,7 @@
+# Dependencies for verify_ch11_ks_test.cjs — Paper J (Ch.11 KS test)
+# Format: Display label|relative/path/to/file
+# This file is read automatically by scripts/master-audit.sh
+# Update this file when the script's dataset requirements change.
+
+Paper J  (Ch.11 KS) — mouse proteomics CSV|datasets/mouse_liver_circadian_proteomics.csv
+Paper J  (Ch.11 KS) — GSE11923 mRNA CSV|datasets/GSE11923_Liver_1h_48h_genes.csv
