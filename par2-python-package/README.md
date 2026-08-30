@@ -169,10 +169,16 @@ The AR(2) framework, the eigenvalue hierarchy hypothesis, and all scientific jud
 
 ## License
 
-PolyForm Noncommercial License 1.0.0 — free for noncommercial use. **Commercial
-use requires a separate commercial license** (contact mickwh@msn.com). See
-[LICENSE](LICENSE) for details. The PAR(2) methodology is the subject of a pending
-UK patent application, covering the methodology independently of this software license.
+Apache License 2.0 — free for any use, including commercial, see
+[LICENSE](LICENSE). Releases up to and including 1.1.8 were published under
+PolyForm Noncommercial 1.0.0; from 1.2.0 the package is open source, so that it
+can be reviewed and depended on by the venues and pipelines that require an
+OSI-approved licence.
+
+The PAR(2) methodology is the subject of pending UK patent application
+GB2518973.9. Section 3 of Apache-2.0 grants you a patent licence covering use of
+*this software*; it does not grant rights to practise the methodology by other
+means (see [NOTICE](NOTICE)). For that, contact mickwh@msn.com.
 
 ## Citation
 
@@ -181,7 +187,7 @@ this repository" button reads it, as do Zenodo, `cffconvert` and most reference
 managers. Please cite the software and the method preprint together:
 
 > Whiteside M (2026). *par2-circadian: AR(2) eigenvalue analysis for gene
-> expression time series*. Version 1.1.8. Zenodo.
+> expression time series*. Version 1.2.0. Zenodo.
 > doi:10.5281/zenodo.21963192
 >
 > Whiteside M (2026). "AR(2) eigenvalue modulus as a measure of temporal

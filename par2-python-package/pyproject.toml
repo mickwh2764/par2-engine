@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "par2-circadian"
-version = "1.1.8"
+version = "1.2.0"
 description = "AR(2) eigenvalue analysis for gene expression time series"
 readme = "README.md"
-license = "PolyForm-Noncommercial-1.0.0"
-license-files = ["LICENSE"]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.9"
 authors = [
     {name = "Michael Whiteside", email = "mickwh@msn.com"}
