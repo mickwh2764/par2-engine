@@ -323,23 +323,22 @@ A Stability-Constrained Reanalysis
 
 ========================================
 
-I, Michael Whiteside, declare that I have no financial or non-financial conflicts 
-of interest that could have influenced the work reported in this manuscript.
-
-Specifically:
+I, Michael Whiteside, declare the following interests relating to the work 
+reported in this manuscript.
 
 FINANCIAL CONFLICTS:
 - No funding was received for this research
 - No financial relationships with entities that could be perceived as influencing this work
-- No patents or patent applications related to this work
+- The author has filed a UK patent application (GB2518973.9) related to the AR(2) 
+  eigenvalue methodology described in this work
+- The PAR(2) Discovery Engine platform is offered under a dual licence: free for 
+  academic and research use, with a separate licence required for commercial use
 
 NON-FINANCIAL CONFLICTS:
 - No personal relationships that could influence this work
 - No employment or consultancy relationships relevant to this manuscript
 
-The author confirms that the research was conducted in the absence of any 
-commercial or financial relationships that could be construed as a potential 
-conflict of interest.
+The author declares no conflicts of interest other than those stated above.
 
 ========================================
 Signature: Michael Whiteside
