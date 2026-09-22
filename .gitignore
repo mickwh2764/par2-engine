@@ -6,7 +6,16 @@ vite.config.ts.*
 *.tar.gz
 
 # Datasets (too large for GitHub, served from Replit storage)
-datasets/
+datasets/*
+# except the Paper U analysis code cited in its data availability statement
+!datasets/GLDS247_colon_RR6/
+datasets/GLDS247_colon_RR6/*
+!datasets/GLDS247_colon_RR6/*.py
+!datasets/GLDS247_colon_RR6/README.md
+!datasets/GLDS247_colon_RR6/SHA256SUMS.txt
+!datasets/GLDS247_colon_RR6/verification/
+datasets/GLDS247_colon_RR6/verification/*
+!datasets/GLDS247_colon_RR6/verification/*.py
 
 # Raw GEO downloads
 datasets/GSE*_raw/

@@ -1,0 +1,10 @@
+# SHA-256 of the published files (paths relative to this directory)
+b12c0cee50073bf32d72f32025600bd6287c3111aa43617dc4d2018ef50ffb2f  analyze_14genes.py
+9d5c74b17949918abe523a439745d467541a153a726aa5b6c2272d425bfbb0fb  analyze_hallmark.py
+0ebe26c7cb9c73baf77d47ce8afff3b0d60d6786c503a88727609fe57c9fc595  verification/check-glds247-live-table3.py
+9eee1d74b3060dda6b8771f6271fa67c08e05a3063f0e25325d103cdfc587ff0  verification/check-glds247-wee1-g2m.py
+aa11ebde3216fc3c1d39ddc920ed51e669929d0fa982931b4aca0b731d4c3222  verification/g2m_symbols.py
+
+# Pre-edit hashes of the verification scripts as supplied from the working tree
+7a8dbc75e5943fc1b08c1c9bdb88f24df686872334ea8a2e33104b46045367ac  (working copy) check-glds247-live-table3.py
+06475e76a179bc0032da85781f43fd216915ac02b1ddaf2b0d11bbe023561f40  (working copy) check-glds247-wee1-g2m.py
