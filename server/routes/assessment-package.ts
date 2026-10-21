@@ -146,7 +146,6 @@ assessmentPackageRouter.get("/api/assessment-package/download", async (req, res)
     // Static PDFs from public/downloads
     const downloadsDir = path.join(ROOT, "public", "downloads");
     const pdfMap: Record<string, string> = {
-      "Whiteside_FQ_Revision_v2_0_corrected.pdf": "papers/paper_g_fibonacci_reply.pdf",
       "PaperO_Organoid_Circadian_Hierarchy.pdf":   "papers/paper_o_organoid.pdf",
     };
     for (const [src, dest] of Object.entries(pdfMap)) {
@@ -205,7 +204,6 @@ assessmentPackageRouter.get("/api/assessment-package/manifest", (_req, res) => {
     "REVIEWER_SAFE_SUMMARY.md",
   ];
   const pdfs = [
-    "Whiteside_FQ_Revision_v2_0_corrected.pdf",
     "PaperO_Organoid_Circadian_Hierarchy.pdf",
   ];
 
@@ -293,7 +291,6 @@ function getValidationDesc(f: string): string {
 
 function getPdfDest(f: string): string {
   const map: Record<string, string> = {
-    "Whiteside_FQ_Revision_v2_0_corrected.pdf": "paper_g_fibonacci_reply.pdf",
     "PaperO_Organoid_Circadian_Hierarchy.pdf": "paper_o_organoid.pdf",
   };
   return map[f] ?? f;
@@ -301,8 +298,6 @@ function getPdfDest(f: string): string {
 
 function getPdfDesc(f: string): string {
   const map: Record<string, string> = {
-    "Whiteside_FQ_Revision_v2_0_corrected.pdf":
-      "Accepted paper — The Fibonacci Quarterly (doi:10.1080/00150517.2026.2716122). All algebraic proofs.",
     "PaperO_Organoid_Circadian_Hierarchy.pdf":
       "Organoid circadian hierarchy paper (Paper O).",
   };
