@@ -20,9 +20,9 @@ private repository, and releases are exported to this one.
 
 ## Overview
 
-The PAR(2) Discovery Engine applies second-order autoregressive (AR(2)) modelling to gene expression time series, computing the eigenvalue modulus |lambda| as a quantitative measure of temporal persistence. The framework recovers a three-layer hierarchy (Clock > Target > Background) across 13 datasets and 4 species, without using any prior biological knowledge in the model fitting.
+The PAR(2) Discovery Engine applies second-order autoregressive (AR(2)) modelling to gene expression time series, computing the eigenvalue modulus |lambda| as a quantitative measure of temporal persistence. |lambda| measures temporal dependence in a sampled expression series; it is not direct evidence of intrinsic molecular memory. Gene labels are not used when fitting each series; they are used afterwards to group the results, and in the datasets analysed on the platform clock genes tend to have higher |lambda| than clock-controlled targets, which in turn tend to exceed the genome-wide background (Clock > Target > Background).
 
-Key result: Clock genes show median |lambda| = 0.647, clock-controlled targets = 0.529, genome-wide background = 0.496. This hierarchy is replicated across mouse, human, rat, and baboon datasets.
+Example: in the platform's summary analysis, median |lambda| is 0.647 for clock genes, 0.529 for clock-controlled targets and 0.496 for the genome-wide background. Results are reported per dataset and species (the platform includes mouse, human, rat and baboon series) and should be cited per dataset, not as a general cross-species law.
 
 ## Live Platform
 
@@ -108,7 +108,7 @@ Higher |lambda| indicates stronger temporal persistence.
 
 ## Validation
 
-- Cross-species replication across mouse, human, rat, and baboon
+- Per-dataset analyses of mouse, human, rat and baboon series
 - ODE round-trip testing (5/5 canonical models recovered)
 - 11-analysis robustness suite (bootstrap, permutation, stationarity, etc.)
 - BMAL1-KO perturbation: hierarchy collapses from +0.152 to -0.005 gap
