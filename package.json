@@ -59,7 +59,7 @@
     "csv-parse": "^6.1.0",
     "docx": "^9.5.3",
     "drizzle-orm": "^0.45.2",
-    "drizzle-zod": "^0.7.0",
+    "drizzle-zod": "^0.8.3",
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
     "express-session": "^1.19.0",
@@ -71,7 +71,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.545.0",
     "memoizee": "^0.4.17",
-    "multer": "^2.0.2",
+    "multer": "^2.5.0",
     "nanoid": "^3.3.18",
     "next-themes": "^0.4.6",
     "openid-client": "^6.8.2",
@@ -96,7 +96,7 @@
     "vitest": "^4.1.4",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.4.4",
